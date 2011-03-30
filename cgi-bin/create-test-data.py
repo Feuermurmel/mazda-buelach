@@ -1,11 +1,11 @@
 #! /usr/bin/env python3.2
 
-import config, sqlite3
+import db
 
-with sqlite3.connect(config.path_db) as connection:
+with db.get_connection() as connection:
 	cursor = connection.cursor()
-	area_name = "news"
 	
+	area_name = "news"
 	area_content = "Der neue Mazda RX-8 mit siiieeebenhundert PS!!!"
 	
 	cursor.execute("insert into area (name, version) values (?, ?)", (area_name, 0))
