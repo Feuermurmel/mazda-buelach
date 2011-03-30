@@ -4,6 +4,51 @@
 
 /* ----------------------------------------------------- Comment */
 
+
+body,
+html {
+	margin: 0;
+	padding: 0;
+	color: #FFF;
+	background: #000;
+}
+
+#wrap {
+	max-width: 1000px;
+	min-width: 600px;
+	margin: 0 auto;
+	background: #555;
+}
+
+#header{
+	background: red;
+	height: 150px;
+	position: relative;
+}
+#hotlinks{
+	background: yellow;
+	width: 400px;
+	height: 50px;
+	position: absolute;
+	right: 0px;
+	bottom: 0px;
+}
+#navigation{
+	background: lightblue;
+	float: left;
+	width: 250px;
+	padding: 5px;
+	padding-left: 15px;
+}
+#content{
+	background: green;
+	margin-left: 270px;
+}
+#footer{
+	background: darkorange;
+	clear: both;
+}
+
 .js div { } /* apply only on JavaScript enabled browsers */
 .ie7 div { } /* apply only on Internet Explorer 7 and below */
 .ie6 div { } /* apply only on Internet Explorer 6 and below */
