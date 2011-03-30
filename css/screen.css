@@ -9,39 +9,39 @@ body,
 html {
 	margin: 0;
 	padding: 0;
-	color: #FFF;
-	background: #000;
+	color: #000;
+	background: #FAE2E2;
 }
 
 #wrap {
 	max-width: 1000px;
 	min-width: 600px;
 	margin: 0 auto;
-	background: #555;
+	background: #E8C1C1;
 }
 
 #header{
-	background: red;
+	background: #E8C1C1;
 	height: 150px;
 	position: relative;
 }
 #hotlinks{
-	background: yellow;
+	background: #FF5555;
 	width: 400px;
-	height: 50px;
+	height: 30px;
 	position: absolute;
 	right: 0px;
 	bottom: 0px;
 }
 #navigation{
-	background: lightblue;
+	background: #E8C1C1;
 	float: left;
 	width: 250px;
 	padding: 5px;
 	padding-left: 15px;
 }
 #content{
-	background: green;
+	background: #E8C1C1;
 	margin-left: 270px;
 }
 #footer{
