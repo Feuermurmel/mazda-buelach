@@ -1,0 +1,38 @@
+﻿div#bildIn {
+	width:1000px;
+	height:500px;
+	margin:auto;
+	margin-top:50px;
+	border:solid 3px black;
+}
+
+div.festeGroesse {
+	width:200px;
+	height:200px;
+	margin:0px;
+	padding:0px;
+	border:solid 1px black;
+	display:table-cell;
+	vertical-align:middle;
+}
+
+div.festeGroesse img {
+	display: block;
+}
+
+
+
+.bigOnMousover {
+	-webkit-transition: all 0.2s ease-in-out;
+	-moz-transition: all 0.2s ease-in-out;
+	margin:auto;
+	max-width:200px;
+	max-height:200px;
+}
+
+.bigOnMousover:hover {
+	-webkit-transform: scale(1.3);
+	-moz-transform: scale(1.3);
+	margin:0px;
+}
+
