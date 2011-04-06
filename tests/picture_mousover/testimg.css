@@ -15,7 +15,7 @@ div.hoverImage {
 	padding:0px;
 }
 
-div.howerImage > div {
+div.hoverImage > div {
 	border:solid 1px black;
 	display:table-cell;
 	vertical-align:middle;
