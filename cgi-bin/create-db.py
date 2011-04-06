@@ -9,29 +9,29 @@ with db.get_connection(True) as connection:
 	cursor = connection.cursor()
 	
 	cursor.executescript('''
-		create table if not exists area(
+		create table area(
 			name,
 			version,
-			primary key (name));
-		create table if not exists text_area(
+			primary key (name, version));
+		create table text_area(
 			content,
 			area_name,
 			area_version,
 			foreign key (area_name, area_version) references area (name, version),
 			primary key (area_name, area_version));
-		create table if not exists gallery_area(
+		create table gallery_area(
 			area_name,
 			area_version,
 			foreign key (area_name, area_version) references area (name, version),
 			primary key (area_name, area_version));
-		create table if not exists uploaded_image(
+		create table uploaded_image(
 			id,
 			blob,
 			width,
 			height,
 			upload_date,
 			primary key (id));
-		create table if not exists text_image(
+		create table text_image(
 			name,
 			area_name,
 			area_version,
@@ -40,7 +40,7 @@ with db.get_connection(True) as connection:
 			foreign key (uploaded_image_id) references uploaded_image (id),
 			primary key (uploaded_image_id),
 			unique (area_name, area_version, name));
-		create table if not exists gallery_image(
+		create table gallery_image(
 			position,
 			title,
 			comment,
