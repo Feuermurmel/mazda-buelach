@@ -49,6 +49,37 @@ html {
 	clear: both;
 }
 
+div.hoverImage {
+	display:table;
+	float:left;
+	width:202px;
+	height:202px;
+	margin:0px;
+	padding:0px;
+}
+
+div.howerImage > div {
+	border:solid 1px black;
+	display:table-cell;
+	vertical-align:middle;
+}
+
+div.hoverImage > div > img {
+	display: block;
+	-webkit-transition: all 0.2s ease-in-out;
+	-moz-transition: all 0.2s ease-in-out;
+	margin:auto;
+	max-width:200px;
+	max-height:200px;
+}
+
+div.hoverImage > div > img:hover {
+	-webkit-transform: scale(1.3);
+	-moz-transform: scale(1.3);
+}
+
+
+
 .js div { } /* apply only on JavaScript enabled browsers */
 .ie7 div { } /* apply only on Internet Explorer 7 and below */
 .ie6 div { } /* apply only on Internet Explorer 6 and below */
