@@ -1,4 +1,5 @@
 __pycache__/
+Thumbs.db
 /db.sqlite
 /work/
-Thumbs.db
+/public_html/

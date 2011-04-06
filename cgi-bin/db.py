@@ -1,32 +1,36 @@
-import config, sqlite3, decorators, os
+import os, sqlite3, config, util
 
 # Constants used in the 'version' column of the 'area' table to distinguish the active from the prepared version.
 version_current = 'current'
 version_new = 'new'
 
-@decorators.memoized
+@util.memoized
 def get_connection(allow_empty = False):
 	'Returns a single, cached connection object for the database.'
 	if not allow_empty and not exists():
 		raise Exception('The database has not yet been created. Please use crete-db.py to do so.')
 	
-	connection = sqlite3.connect(config.path_db)
+	connection = sqlite3.connect(config.paths.db)
 	connection.cursor().execute('PRAGMA foreign_keys=ON') # make sure that foreign key constrainst are enforced by the database
 	
 	return connection
 
 def exists():
 	'Returns True if the database file already exists and False otherwise.'
-	return os.path.exists(config.path_db)
+	return os.path.exists(config.paths.db)
 
 def new_version_exists():
 	cursor = get_connection()
-	cursor.execute('select count(*) from area where version = ?', version_new)
+	cursor.execute('select count(*) from area where version = ?', [version_new])
 	
 	return cursor.fetchone()[0] > 0
 
-# for testing:
-# rm -f ../db.sqlite && ./create-db.py && ./create-test-data.py && python3.2 -c $'import db\nwith db.get_connection(): db.create_new_version()' && sqlite3 ../db.sqlite .dump
+def get_textarea(name, version = None):
+	cursor = get_connection().cursor()
+	cursor.execute('select content from text_area where area_name = ?', [name])
+	
+	return cursor.fetchone()[0]
+
 def create_new_version():
 	cursor = get_connection()
 	cursor.execute('insert into area (name, version) select name, ? from area', [version_new])
