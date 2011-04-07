@@ -4,7 +4,7 @@ import os, sqlite3, config, util
 version_current = 'current'
 version_new = 'new'
 
-@util.memoized
+@util.memorized
 def get_connection(allow_empty = False):
 	'Returns a single, cached connection object for the database.'
 	if not allow_empty and not exists():

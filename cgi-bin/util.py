@@ -2,7 +2,7 @@ import os
 from os import path
 
 # from http://wiki.python.org/moin/PythonDecoratorLibrary#Memoize
-class memoized(object):
+class memorized(object):
 	"Decorator that caches a function's return value each time it is called. If called later with the same arguments, the cached value is returned, and not re-evaluated."
 	def __init__(self, func):
 		self.func = func

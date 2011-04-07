@@ -8,7 +8,7 @@ class paths:
 	# directory with page templates used to generate the site
 	templates = '../templates'
 	
-	# directory with reusable parts used in the pages
+	# directory with reusable parts used in the templates
 	snippets = '../templates/snippets'
 	
 	# directory where the final pages will be output
