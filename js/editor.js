@@ -8,6 +8,14 @@ $(function(){
 	});
 });
 
+function setUpEditor(){
+	$(".editor [name=save]").click(closeEditor);
+}
+
 function callEditor(){
-	window.open("editor.html","Editor","width=800,height=400");
+	$('.editor_popup').load('editor.html');
+	/* window.open("editor.html","Editor","width=800,height=400"); */
+}
+function closeEditor(){
+	$('.editor_popup').empty();
 }

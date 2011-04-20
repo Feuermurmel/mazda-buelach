@@ -5,14 +5,23 @@
 		</title>
 	</head>
 	<body>
-		<div id="editor">
-			<div id="header">
+		<div class="editor">
+			<div class="header">Seite bearbeiten
 			</div>
-			<div id="content">
-				test
+			<div class="buttons">
+			<input type="button" name="save" value="Speichern" />
+			<input type="button" name="preview" value="Vorschau" />
+			<input type="button" name="picture" value="Bild einfügen" />
+			<input type="button" name="picture" value="Bild hochladen" />
+			<input type="button" name="picture" value="Bild einfügen" />
 			</div>
-			<div id="buttons">
+			<div class="content">
+				<textarea name="editor" cols="50" rows="20"></textarea>
 			</div>
+			
 		</div>
+		<script>
+			setUpEditor();
+		</script>
 	</body>
 </html>

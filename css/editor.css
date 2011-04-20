@@ -1,0 +1,36 @@
+.editor{
+	position: fixed;
+	width: 750px;
+	height: 600px;
+	margin: 0 auto;
+	background: #E8C1C1;
+	border: solid black 2px;
+}
+.editor > .header{
+	background: #E8C1C1;
+	height: 100px;
+	position: relative;
+}
+.editor > .content{
+	background: #E8C1C1;
+	padding: 5px;
+	padding-left: 0px;
+	margin-left: 0px;
+}
+
+.editor > .buttons{
+	background: #E8C1C1;
+	margin-left: 0px;
+	height:50px;
+	padding: 5px;
+}
+
+.editor_popup {
+	position: fixed;
+	left: 100px;
+	top: 100px;
+}
+
+textarea {
+	resize: vertical; /* oder none */
+}
