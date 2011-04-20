@@ -48,6 +48,49 @@ html {
 	background: darkorange;
 	clear: both;
 }
+#editor{
+	max-width: 1000px;
+	min-width: 600px;
+	margin: 0 auto;
+	background: #E8C1C1;
+}
+#editor#header{
+	background: #E8C1C1;
+	height: 150px;
+	position: relative;
+}
+#editor#content{
+	background: #E8C1C1;
+	float: left;
+	width: 150px;
+	padding: 5px;
+	padding-left: 15px;
+}
+
+#editor#buttons{
+	background: #E8C1C1;
+	margin-left: 270px;
+}
+
+.editable {
+	border:solid black 1px;
+	position:relative;
+}
+.editable.hover {
+	border:solid red 1px;
+}
+
+.editable > img:first-child {
+	position: absolute;
+	display: block;
+	top: 0px;
+	right: 0px;
+	cursor:pointer;
+}
+
+	
+}
+
 
 div.hoverImage {
 	display:table;
