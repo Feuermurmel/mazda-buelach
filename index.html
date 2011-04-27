@@ -16,12 +16,12 @@
 <!--[if gt IE 7]><body><![endif]-->
 <!--[if !IE]><!--><body><!-- <![endif]-->
 	
-	<div id="wrap">
-		<div id="header">header
-			<div id="hotlinks">hotlinks
+	<div class="wrap">
+		<div class="header">header
+			<div class="hotlinks">hotlinks
 			</div>
 		</div>
-		<div id="navigation">
+		<div class="navigation">
 			<ul>
 				<li><a href="#">Link 1</a></li>
 				<li><a href="#">Link 2</a></li>
@@ -37,16 +37,20 @@
 				<li><a href="#">Link 2</a></li>
 			</ul>
 		</div>
-		<div id="content">
+		<div class="content">
+			<div class="editable">
+			<img src="img/editicon.jpg" alt="Edit Icon" title="Zum editieren klicken">
 			Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua.
+			</div>
 		</div>
-		<div id="footer">footer
+		<div class="footer">footer
 		</div>
 	</div>
-
+	<div class="editor_popup"></div>
 	<script src="js/jquery-1.5.min.js"></script>
 	<script src="js/jquery.fancybox-1.3.4.pack.js"></script>
 	<script src="js/domscript.js"></script>
+	<script src="js/editor.js"></script>
 	<script>
 		jQuery(dom_init);
 		
