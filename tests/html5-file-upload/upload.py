@@ -1,16 +1,22 @@
 #! /usr/bin/env python3.2
 
-import cgi, cgitb
+import sys, cgi, cgitb
 
-cgitb.enable()
+cgitb.enable(format = False, context = 0)
 
-print('Content-Type: text/html')
+print('Content-Type: text/plain')
 print()
 
 storage = cgi.FieldStorage()
+print(storage.keys(), file = sys.stderr)
 
 file = storage['fileToUpload'].file
-outFile = open('upload/' + storage['fileToUpload'].filename, 'wb')
-outFile.write(file)
+with open('upload/' + storage['fileToUpload'].filename, 'wb') as outFile:
+	while True:
+		buffer = file.read(1024 * 1024)
+		
+		if not buffer: break
+		
+		outFile.write(buffer)
 
-print('fooo');
+print('Done.')

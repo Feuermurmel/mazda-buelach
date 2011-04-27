@@ -43,24 +43,36 @@
 					document.getElementById('progressNumber').innerHTML = 'unable to compute';
 				}
 			}
+			
+			function addResponse(text) {
+				$('#response').empty()
+				
+				console.log(text);
+				text.split('\n').map(function (i) {
+					var elem = $(document.createElement('p'));
+					
+					elem.text(i.replace(' ', '\xa0'));
+					$('#response').append(elem);
+				})
+				
+			}
 		
 			function uploadComplete(evt) {
-				/* This event is raised when the server send back a response */
 			//	alert(evt.target.responseText);
 				
-				$('#response').text(evt.target.responseText);
+				addResponse(evt.target.responseText);
 			}
 			
 			function uploadFailed(evt) {
 			//	alert("There was an error attempting to upload the file.");
 				
-				$('#response').html(evt.target.responseText);
+				addResponse(evt.target.responseText);
 			}
 			
 			function uploadCanceled(evt) {
 			//	alert("The upload has been canceled by the user or the browser dropped the connection.");
 				
-				$('#response').text(evt.target.responseText);
+				addResponse(evt.target.responseText);
 			}
 		</script>
 	</head>
@@ -79,6 +91,6 @@
 			<div id="progressNumber"></div>
 		</form>
 		<div id='response'></div>
-		<script src="../mazda-buelach/js/jquery-1.5.min.js"></script>
+		<script src="../../js/jquery-1.5.min.js"></script>
 	</body>
 </html>
