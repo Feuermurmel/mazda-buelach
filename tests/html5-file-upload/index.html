@@ -25,13 +25,15 @@
 				var fd = new FormData();
 				var xhr = new XMLHttpRequest();
 				
-				fd.append("fileToUpload", document.getElementById('fileToUpload').files[0]);
+				// see http://dev.w3.org/2006/webapi/XMLHttpRequest-2/#the-append-method
+				fd.append("file", document.getElementById('fileToUpload').files[0]);
+				fd.append("data", "{ }");
 				
 				xhr.upload.addEventListener("progress", uploadProgress, false);
 				xhr.addEventListener("load", uploadComplete, false);
 				xhr.addEventListener("error", uploadFailed, false);
 				xhr.addEventListener("abort", uploadCanceled, false);
-				xhr.open("POST", "upload.py");
+				xhr.open("POST", "../../cgi-bin/request-handler.py");
 				xhr.send(fd);
 			}
 			

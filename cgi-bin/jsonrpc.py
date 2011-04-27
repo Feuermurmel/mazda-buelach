@@ -72,15 +72,12 @@ def handle_request(handler):
 	
 	storage = cgi.FieldStorage()
 	
-	print('Content-Type: text/plain')
-	print('Status: 200')
-	print('')
-	
 	try:
-		data = 
-		attachments
+		data = json.loads(storage['data'].value)
+		file = storage['file'].file
+	#	attachments
 		
-		result = handler(dict(storage), None)
+		result = handler(data, file)
 		send_response(200, result)
 	except CGIRequestError as e:
 		send_response(e.status_code, e.message)
@@ -89,4 +86,4 @@ def handle_request(handler):
 		
 		lines = fromat_stacktrace(*sys.exc_info())
 	#	send_response(500, '\n'.join(lines))
-		send_response(500, '\n'.join(traceback.format_exception(*sys.exc_info())))
+		send_response(500, '\n'.join(lines))
