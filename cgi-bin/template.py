@@ -21,12 +21,12 @@ def process_areas(text, handler):
 	def grp(pattern, repetition = None, *, name = None):
 		result = pattern
 		
-		if repetition != None:
+		if not repetition is None:
 			result = '(?:' + pattern + ')' + repetition
-		elif name == None:
+		elif name is None:
 			result = '(?:' + pattern + ')'
 		
-		if name != None:
+		if not name is None:
 			result = '(?P<' + name + '>' + result + ')'
 		
 		return result
@@ -53,7 +53,7 @@ def process_areas(text, handler):
 		attrs = { }
 		
 		for j in re.finditer(attr, i.group('attrs')):
-			attrs[i.group('name')] = i.group('value')
+			attrs[j.group('name')] = j.group('value')
 		
 		replacement = getattr(handler, i.group('instr'))(**attrs)
 		
