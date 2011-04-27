@@ -1,0 +1,30 @@
+<html>
+	<head>
+		<link href="css/screen.css" rel="stylesheet" media="screen" type="text/css" />
+		<title>
+		</title>
+	</head>
+	<body>
+		<div class="editor">
+			<div class="header">Seite bearbeiten
+			</div>
+			<form enctype="multipart/form-data"> 
+			<div class="buttons">
+				Bild hochladen: <br />
+			<input type="file" name="picture" value="Bild einfügen" />
+			Titel: <input type="text" id="title" name="title" value="Titel" />
+			Kommentar: <input type="text" name="comment" value="Kommentar" />
+			<input type="button" name="submit" value="Hochladen" />
+			<input type="button" name="close" value="Schliessen" />
+			</div>
+			</form>
+			<div class="gallery">
+				
+			</div>
+			
+		</div>
+		<script>
+			setUpEditor();
+		</script>
+	</body>
+</html>
