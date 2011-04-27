@@ -1,16 +1,14 @@
 #! /usr/bin/env python3.2
 
+
 import jsonrpc, cgi, sys
 
 
-def handler(data, attachments):
+def handler(data, file):
 	import sys
 	
-	res = cgi.parse(sys.stdin)
 	
-#	print({ i: getattr(data["textline"], i) for i in dir(data["textline"]) })
-	
-	return repr({ k: (v.type, v.value, v.name) for k, v in data.items() })
+	return len(file.read())
 
 
 jsonrpc.handle_request(handler)
