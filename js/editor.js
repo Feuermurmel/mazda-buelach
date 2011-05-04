@@ -41,7 +41,6 @@ function uploadImage(){
 	xhr.addEventListener("load", function(evt){alert(evt.target.responseText);}, false);
 	xhr.open("POST", "/cgi-bin/request-handler.py");
 	xhr.send(fd);
-	closeEditor();
 }
 
 function callEditor(type){
