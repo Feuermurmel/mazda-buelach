@@ -37,7 +37,7 @@ function uploadImage(){
 		"comment":$("[name=comment]").val()
 	};
 	
-	fd.append("file", $("[name=picture]")[0].files[0]);
+	fd.append("file", $(".gallery-editor [name=picture]")[0].files[0]);
 
 	xhr.addEventListener("load", function (evt) {
 		console.log(evt.target.responseText);
