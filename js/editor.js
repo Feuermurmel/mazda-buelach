@@ -1,6 +1,10 @@
-
 $(function(){
-	$(".editable > img:first-child").click(callGalleryEditor);
+	$.ajaxSetup ({
+	    // Disable caching of AJAX responses
+	    cache: false
+	});
+	$(".editable.editor-gallery > img:first-child").click(function() { callEditor("gallery"); });
+	$(".editable.editor-text > img:first-child").click(function() { callEditor("text"); });
 	$(".editable > img:first-child").hover(function () {
 		$(this).parent().addClass("hover");
 	}, function () {
@@ -8,9 +12,21 @@ $(function(){
 	});
 });
 
-function setUpEditor(){
+function setUpEditor(type){
 	$(".editor [name=close]").click(closeEditor);
-	$(".editor [name=submit]").click(uploadImage);
+	
+	if(type === "gallery")
+	{
+		$(".text-editor").hide();
+		$(".editor [name=submit]").click(uploadImage);
+		showGallery();
+		
+	}
+	else if(type === "text")
+	{
+		$(".gallery-editor").hide();
+		$('.gallery').append("Texteditor");
+	}
 }
 function uploadImage(){
 	var fd = new FormData();
@@ -21,17 +37,21 @@ function uploadImage(){
 		"title":$("[name=title]").val(),
 		"comment":$("[name=comment]").val()
 	}));
+	
+	xhr.addEventListener("load", function(evt){alert(evt.target.responseText);}, false);
 	xhr.open("POST", "/cgi-bin/request-handler.py");
 	xhr.send(fd);
+	closeEditor();
 }
 
-function callEditor(){
-	$('.editor_popup').load('editor.html');
+function callEditor(type){
+	$('.editor_popup').load('editor.html', function() { setUpEditor(type);});
 	/* window.open("editor.html","Editor","width=800,height=400"); */
-}
-function callGalleryEditor(){
-	$('.editor_popup').load('gallery_editor.html');
 }
 function closeEditor(){
 	$('.editor_popup').empty();
+}
+function showGallery() {
+	$('.gallery').append("Welt");
+	// Mit remove Divs herausnehmen und clone und sovielmal einfügen wie man es braucht
 }

@@ -6,23 +6,40 @@
 	</head>
 	<body>
 		<div class="editor">
-			<div class="header">Seite bearbeiten
+			<div class="text-editor">
+				<div class="header">Seite bearbeiten
+				</div>
+				<div class="buttons">
+				<input type="button" name="save" value="Speichern" />
+				<input type="button" name="preview" value="Vorschau" />
+				<input type="button" name="picture" value="Bild einfügen" />
+				<input type="button" name="picture" value="Bild hochladen" />
+				<input type="button" name="picture" value="Bild einfügen" />
+				<input type="button" name="close" value="Schliessen" />
+				</div>
+				<div class="content">
+					<textarea name="editor" cols="50" rows="20"></textarea>
+				</div>
+				
 			</div>
-			<div class="buttons">
-			<input type="button" name="save" value="Speichern" />
-			<input type="button" name="preview" value="Vorschau" />
-			<input type="button" name="picture" value="Bild einfügen" />
-			<input type="button" name="picture" value="Bild hochladen" />
-			<input type="button" name="picture" value="Bild einfügen" />
-			<input type="button" name="close" value="Schliessen" />
+			<div class="gallery-editor">
+				<div class="header">Seite bearbeiten
+				</div>
+				<form enctype="multipart/form-data"> 
+					<div class="buttons">
+						Bild hochladen: <br />
+						<input type="file" name="picture" value="Bild einfügen" />
+						Titel: <input type="text" id="title" name="title" value="Titel" />
+						Kommentar: <input type="text" name="comment" value="Kommentar" />
+						<input type="button" name="submit" value="Hochladen" />
+						<input type="button" name="close" value="Schliessen" />
+					</div>
+				</form>
+				<div class="gallery-content">
+					<p>hallo</p>
+				</div>
+				
 			</div>
-			<div class="content">
-				<textarea name="editor" cols="50" rows="20"></textarea>
-			</div>
-			
 		</div>
-		<script>
-			setUpEditor();
-		</script>
 	</body>
 </html>
