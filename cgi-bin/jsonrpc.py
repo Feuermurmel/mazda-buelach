@@ -2,6 +2,7 @@
 
 import sys, os, json, cgi
 from os import path
+from urllib import parse
 
 class CGIRequestError(Exception):
 	def __init__(self, status_code, message):
@@ -70,20 +71,26 @@ def handle_request(handler):
 	
 	The function should return a tuple of the form (status, data) where status is the HTTP status code to send and an object which will be encoded as JSON object.'''
 	
-	storage = cgi.FieldStorage()
-	
 	try:
-		data = json.loads(storage['data'].value)
-		file = storage['file'].file
-	#	attachments
+		# parse the complete query string as a json object
+		method = os.environ['REQUEST_METHOD'].lower()
+		query = os.environ['QUERY_STRING'].split('&')[0]
+		data = json.loads(parse.unquote(query))
+		files = { }
 		
-		result = handler(data, file)
+		if method == 'post':
+			storage = cgi.FieldStorage() 
+			
+			for i in storage:
+				files[i] = (storage[i].name, storage[i].file)
+		elif method != 'get':
+			raise CGIRequestError(405, 'Method Not Allowed')
+		
+		result = handler(data, files)
 		send_response(200, result)
 	except CGIRequestError as e:
 		send_response(e.status_code, e.message)
 	except:
-		import traceback
-		
 		lines = fromat_stacktrace(*sys.exc_info())
-	#	send_response(500, '\n'.join(lines))
 		send_response(500, '\n'.join(lines))
+
