@@ -16,12 +16,21 @@ function uploadImage(){
 	var fd = new FormData();
 	var xhr = new XMLHttpRequest();
 	
-	fd.append("file", $("[name=picture]")[0].files[0]);
-	fd.append("data", $.toJSON({
+	data = {
 		"title":$("[name=title]").val(),
 		"comment":$("[name=comment]").val()
-	}));
-	xhr.open("POST", "/cgi-bin/request-handler.py");
+	};
+	
+	fd.append("file", $("[name=picture]")[0].files[0]);
+	
+	xhr.addEventListener("load", function (evt) {
+		console.log(evt.target.responseText);
+	}, false);
+	xhr.addEventListener("error", function (evt) {
+		console.log(evt.target.responseText);
+	}, false);
+	
+	xhr.open("POST", "cgi-bin/request-handler.py?" + $.toJSON(data));
 	xhr.send(fd);
 }
 
