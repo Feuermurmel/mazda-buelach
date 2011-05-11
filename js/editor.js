@@ -7,7 +7,7 @@ $(function(){
 	$(".editable.editor-text > img:first-child").click(function() { callEditor("text"); });
 	$(".editable > img:first-child").hover(function () {
 		$(this).parent().addClass("hover");
-	}, function () {
+		}, function () {
 		$(this).parent().removeClass("hover");
 	});
 });
@@ -38,7 +38,7 @@ function uploadImage(){
 	};
 	
 	fd.append("file", $(".gallery-editor [name=picture]")[0].files[0]);
-	
+
 	xhr.addEventListener("load", function (evt) {
 		console.log(evt.target.responseText);
 	}, false);
