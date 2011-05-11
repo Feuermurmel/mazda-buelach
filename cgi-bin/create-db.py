@@ -14,9 +14,9 @@ with db.get_connection(True) as connection:
 			version,
 			primary key (name, version));
 		create table text_area(
-			content,
 			area_name,
 			area_version,
+			content,
 			foreign key (area_name, area_version) references area (name, version),
 			primary key (area_name, area_version));
 		create table gallery_area(
@@ -51,3 +51,4 @@ with db.get_connection(True) as connection:
 			foreign key (uploaded_image_id) references uploaded_image (id),
 			primary key (uploaded_image_id),
 			unique (area_name, area_version, position));''')
+

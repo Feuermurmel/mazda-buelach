@@ -13,6 +13,12 @@ class CGIRequestError(Exception):
 		return 'HTTP Error %s' % self.status_code
 
 
+class BareResponse():
+	def __init__(self, content_type, data):
+		self.mime_type = content_type
+		self.data = data
+
+
 # Define a custon exception handler which will be called on uncaught exceptions and return a valid HTTP error message
 def fromat_stacktrace(type, value, traceback):
 	lines = []
@@ -47,7 +53,10 @@ def fromat_stacktrace(type, value, traceback):
 def send_response(status_code, body):
 	# prepare data; we're trying to catch any errors before we write the headers so we can send a different status code if an exception get's thrown
 	
-	if isinstance(body, str):
+	if isinstance(body, BareResponse):
+		content_type = body.content_type
+		body_data = body.data
+	elif isinstance(body, str):
 		content_type = 'text/plain'
 		body_data = body = body.encode('utf-8')
 	else:
@@ -82,7 +91,7 @@ def handle_request(handler):
 			storage = cgi.FieldStorage() 
 			
 			for i in storage:
-				files[i] = (storage[i].name, storage[i].file)
+				files[i] = (storage[i].filename, storage[i].file)
 		elif method != 'get':
 			raise CGIRequestError(405, 'Method Not Allowed')
 		

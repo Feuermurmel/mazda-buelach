@@ -26,15 +26,21 @@
 				var xhr = new XMLHttpRequest();
 				
 				// see http://dev.w3.org/2006/webapi/XMLHttpRequest-2/#the-append-method
-				fd.append("file1", document.getElementById('fileToUpload').files[0]);
-				fd.append("file2", document.getElementById('fileToUpload').files[0]);
+				fd.append("image", document.getElementById('fileToUpload').files[0]);
 				
 				xhr.upload.addEventListener("progress", uploadProgress, false);
 				xhr.addEventListener("load", uploadComplete, false);
 				xhr.addEventListener("error", uploadFailed, false);
 				xhr.addEventListener("abort", uploadCanceled, false);
 				
-				xhr.open("POST", "../../cgi-bin/request-handler.py?" + $.toJSON({ a: " " }));
+				req = {
+					'action': 'upload-gallery-image',
+					'area-name': 'test-gallery',
+					'comment': 'comment ...',
+					'title': 'title ...'
+				}
+				
+				xhr.open("POST", "../cgi-bin/request-handler.py?" + $.toJSON(req));
 				xhr.send(fd);
 			}
 			
@@ -63,6 +69,7 @@
 			function uploadComplete(evt) {
 			//	alert(evt.target.responseText);
 				
+				console.log(evt);
 				addResponse(evt.target.responseText);
 			}
 			
@@ -94,7 +101,7 @@
 			<div id="progressNumber"></div>
 		</form>
 		<div id='response'></div>
-		<script src="../../js/jquery-1.5.min.js"></script>
-		<script src="../../js/jquery.json-2.2.min.js"></script>
+		<script src="../js/jquery-1.5.min.js"></script>
+		<script src="../js/jquery.json-2.2.min.js"></script>
 	</body>
 </html>
