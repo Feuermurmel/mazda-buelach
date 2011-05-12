@@ -61,10 +61,10 @@ def get_gallery_images(area_name):
 	
 	cursor.execute('select id, title, comment, width, height, upload_date from gallery_image, uploaded_image where area_name = ? and gallery_image.uploaded_image_id = uploaded_image.id order by position', [area_name])
 	
-	return [{ 'id': id, 'title': title, 'comment': comment, 'width': width, 'height': height, 'upload-date': upload_date } for id, title, comment, width, height, upload_date in corsor.fetchall()]
+	return [{ 'id': id, 'title': title, 'comment': comment, 'width': width, 'height': height, 'upload-date': upload_date } for id, title, comment, width, height, upload_date in cursor.fetchall()]
 
 
-def add_gallery_image(blob, width, height, filename):
+def add_gallery_image(area_name, filename, blob, width, height, title, comment):
 	cursor = get_connection().cursor()
 	counter = 1
 	upload_date = time.mktime(datetime.datetime.now().timetuple())
@@ -82,7 +82,27 @@ def add_gallery_image(blob, width, height, filename):
 		
 		counter += 1
 	
-	cursor.execute('insert into uploaded_image(id, blob, width, height, upload_date) values (?, ?, ?, ?, ?)', [id, blob, width, height, upload_date])
+	cursor.execute('select max(position) from gallery_image where area_name = ? and area_version = ?', [area_name, 'new'])
+	next_pos = cursor.fetchone()[0]
+	
+	data = {
+		'area_name': area_name,
+		'area_name_': area_name, # Python's sqlite3 interface does not allow using a given named parameter multiple times in the query
+		'area_version': 'new',
+		'area_version_': 'new',
+		'id': id,
+		'id_': id,
+		'blob': blob,
+		'width': width,
+		'height': height,
+		'upload_date': upload_date,
+		'title': title,
+		'comment': comment,
+		'position': 0 if next_pos is None else next_pos + 1
+	}
+	
+	cursor.execute('insert into uploaded_image(id, blob, width, height, upload_date) values (:id, :blob, :width, :height, :upload_date)', data)
+	cursor.execute('insert into gallery_image(position, title, comment, area_name, area_version, uploaded_image_id) values (:position, :title, :comment, :area_name_, :area_version_, :id_)', data)
 	
 	return id
 

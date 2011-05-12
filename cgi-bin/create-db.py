@@ -47,7 +47,7 @@ with db.get_connection(True) as connection:
 			area_name,
 			area_version,
 			uploaded_image_id,
-			foreign key (area_name, area_version) references text_area (area_name, area_version),
+			foreign key (area_name, area_version) references gallery_area (area_name, area_version),
 			foreign key (uploaded_image_id) references uploaded_image (id),
 			primary key (uploaded_image_id),
 			unique (area_name, area_version, position));''')

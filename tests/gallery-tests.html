@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>DB Request Tests</title>
+		<style type="text/css">
+			.response p {
+				margin: 0px;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="test-gallery-image-upload">
+			<h2>Gallery Image Upload Test</h2>
+			<p>Select a JPEG image to upload and hit the button.</p>
+			<p>JPEG file to upload: <input type="file" name="image" /></p>
+			<p>Gallery Name: <input type="text" name="area-name" value="test-gallery" /></p>
+			<p>Image Title: <input type="text" name="title" value="title …" /></p>
+			<p>Image Comment: <input type="text" name="comment" value="comment …" /></p>
+			<p><input type="button" value="Upload" /></p>
+			<div class="response"></div>
+		</div>
+		<div id="test-list-gallery-images">
+			<h2>List Gallery Images Test</h2>
+			<p>Enter a gallery name and hit the button.</p>
+			<p>Gallery Name: <input type="text" name="area-name" value="test-gallery" /></p>
+			<p><input type="button" value="List" /></p>
+			<div class="response"></div>
+		</div>
+		<div id="test-get-image">
+			<h2>Get Image Test</h2>
+			<p>Enter an image ID and hit the button.</p>
+			<p>Image ID: <input type="text" name="id" value="" /></p>
+			<p><input type="button" value="Get" /></p>
+			<div class="response"></div>
+		</div>
+		<script src="../js/jquery-1.5.min.js"></script>
+		<script src="../js/jquery.json-2.2.min.js"></script>
+		<script src="gallery-tests.js"></script>
+	</body>
+</html>

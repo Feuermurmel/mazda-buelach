@@ -15,7 +15,7 @@ class CGIRequestError(Exception):
 
 class BareResponse():
 	def __init__(self, content_type, data):
-		self.mime_type = content_type
+		self.content_type = content_type
 		self.data = data
 
 
