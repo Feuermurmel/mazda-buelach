@@ -24,36 +24,58 @@ def get_connection(allow_empty = False):
 	return connection
 
 
+@util.decorator
+def in_transaction(fn):
+	def res(*args, **kwargs):
+		with get_connection():
+			return fn(*args, **kwargs)
+	
+	return res
+
+
 def exists():
 	'Returns True if the database file already exists and False otherwise.'
 	return os.path.exists(config.paths.db)
 
 
 def create_textarea(name):
-	cursor = get_connection().cursor()
-	
-	# TODO: don't fail, if the text_area already exists
-#	cursor.execute('select from test_area')
-	
-	cursor.execute('insert into area(name, version) values (?, ?)', [name, 'new'])
-	cursor.execute('insert into text_area(area_name, area_version, content) values (?, ?, ?)', [name, 'new', ''])
+	if not galleryarea_exists(name):
+		cursor = get_connection().cursor()
+		
+		cursor.execute('insert into area(name, version) values (?, ?)', [name, 'new'])
+		cursor.execute('insert into text_area(area_name, area_version, content) values (?, ?, ?)', [name, 'new', ''])
 
 
 def get_textarea(name, version):
 	cursor = get_connection().cursor()
+	
 	cursor.execute('select content from text_area where area_name = ? and area_version = ?', [name, version])
 	
 	return cursor.fetchone()[0]
 
 
 def create_galleryarea(name):
+	if not galleryarea_exists(name):
+		cursor = get_connection().cursor()
+		
+		cursor.execute('insert into area(name, version) values (?, ?)', [name, 'new'])
+		cursor.execute('insert into gallery_area(area_name, area_version) values (?, ?)', [name, 'new'])
+
+
+def galleryarea_exists(name):
 	cursor = get_connection().cursor()
 	
-	# TODO: don't fail, if the text_area already exists
-#	cursor.execute('select from test_area')
+	cursor.execute('select count(*) from gallery_area where area_name = ? and area_version = ?', [name, 'new'])
 	
-	cursor.execute('insert into area(name, version) values (?, ?)', [name, 'new'])
-	cursor.execute('insert into gallery_area(area_name, area_version) values (?, ?)', [name, 'new'])
+	return cursor.fetchone()[0] > 0;
+
+
+def textarea_exists(name):
+	cursor = get_connection().cursor()
+	
+	cursor.execute('select count(*) from text_area where area_name = ? and area_version = ?', [name, 'new'])
+	
+	return cursor.execute.fetchone()[0] > 0;
 
 
 def get_gallery_images(area_name):
@@ -61,7 +83,7 @@ def get_gallery_images(area_name):
 	
 	cursor.execute('select id, title, comment, width, height, upload_date from gallery_image, uploaded_image where area_name = ? and gallery_image.uploaded_image_id = uploaded_image.id order by position', [area_name])
 	
-	return [{ 'id': id, 'title': title, 'comment': comment, 'width': width, 'height': height, 'upload-date': upload_date } for id, title, comment, width, height, upload_date in cursor.fetchall()]
+	return [{ 'image-id': image_id, 'title': title, 'comment': comment, 'width': width, 'height': height, 'upload-date': upload_date } for image_id, title, comment, width, height, upload_date in cursor.fetchall()]
 
 
 def add_gallery_image(area_name, filename, blob, width, height, title, comment):
@@ -107,10 +129,22 @@ def add_gallery_image(area_name, filename, blob, width, height, title, comment):
 	return id
 
 
-def get_image(id):
+def delete_gallery_image(area_name, image_id):
 	cursor = get_connection().cursor()
 	
-	cursor.execute('select blob from uploaded_image where id = ?', [id])
+	cursor.execute('select blob from uploaded_image where id = ?', [image_id])
+	
+	return cursor.fetchone()[0]
+
+
+def cleanup_orphan_images(area_name, image_id):
+	pass
+
+
+def get_image(image_id):
+	cursor = get_connection().cursor()
+	
+	cursor.execute('select blob from uploaded_image where id = ?', [image_id])
 	
 	return cursor.fetchone()[0]
 

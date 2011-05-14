@@ -16,30 +16,20 @@ function testGalleryImageUpload() {
 		return
 	}
 	
-	var fd = new FormData();
-	var xhr = new XMLHttpRequest();
-	
-	// see http://dev.w3.org/2006/webapi/XMLHttpRequest-2/#the-append-method
-	fd.append("image", file);
-	
-	xhr.addEventListener('load', function (evt) {
-		displayResponse(testName, evt.target.responseText, '#ccf');
-	}, false);
-	
-	xhr.addEventListener('error', function (evt) {
-		displayResponse(testName, evt.target.responseText, '#fcc');
-	}, false);
-	
 	// request data
-	req = {
+	var data = {
 		'action': 'upload-gallery-image',
 		'area-name': $(testName + ' [name=area-name]').val(),
 		'title': $(testName + ' [name=title]').val(),
 		'comment': $(testName + ' [name=comment]').val(),
+		'image': file
 	}
 	
-	xhr.open('POST', handlerURL + '?' + $.toJSON(req));
-	xhr.send(fd);
+	jsonrpc(handlerURL, data, function (res) {
+		displayResponse(testName, res, '#ccf');
+	}, function (res) {
+		displayResponse(testName, res, '#fcc');
+	});
 	
 	displayResponse(testName, 'Loading ...', '#ccc');
 }
@@ -47,32 +37,23 @@ function testGalleryImageUpload() {
 function testListGalleryImages() {
 	var testName = '#test-list-gallery-images';
 	
-	var fd = new FormData();
-	var xhr = new XMLHttpRequest();
-	
-	xhr.addEventListener('load', function (evt) {
-		displayResponse(testName, evt.target.responseText, '#ccf');
-	}, false);
-	
-	xhr.addEventListener('error', function (evt) {
-		displayResponse(testName, evt.target.responseText, '#fcc');
-	}, false);
-	
 	// request data
-	req = {
+	data = {
 		'action': 'list-gallery-images',
 		'area-name': $(testName + ' [name=area-name]').val()
 	}
 	
-	xhr.open('GET', handlerURL + '?' + $.toJSON(req));
-	xhr.send(fd);
+	jsonrpc(handlerURL, data, function (res) {
+		displayResponse(testName, res, '#ccf');
+	}, function (res) {
+		displayResponse(testName, res, '#fcc');
+	});
 	
 	displayResponse(testName, 'Loading ...', '#ccc');
 }
 
 function testGetImage() {
 	var testName = '#test-get-image';
-	
 	var image = new Image();
 	
 	$(image).load(function (evt) {
@@ -80,13 +61,13 @@ function testGetImage() {
 	});
 	
 	$(image).error(function (evt) {
-		displayResponse(testName, evt.target.responseText, '#fcc');
+		displayResponse(testName, 'Could not load image!', '#fcc');
 	});
 	
 	// request data
 	req = {
 		'action': 'get-image',
-		'id': $(testName + ' [name=id]').val()
+		'image-id': $(testName + ' [name=image-id]').val()
 	}
 	
 	image.src = handlerURL + '?' + $.toJSON(req);
@@ -109,8 +90,53 @@ function displayResponse(testName, text, color) {
 			textElem.text(str);
 			elem.append(textElem);
 		});
-	} else {
+	} else if (text instanceof HTMLElement) {
 		elem.append(text);
+	} else {
+		elem.append($.toJSON(text));
 	}
+	
+	console.log(text);
 }
+
+function jsonrpc(url, data, success, failure) {
+	var fd = new FormData();
+	var xhr = new XMLHttpRequest();
+	
+	xhr.addEventListener('load', function (evt) {
+		contentType = xhr.getResponseHeader('Content-Type').split(';')[0]
+		
+		if (contentType == 'text/plain') {
+			var res = xhr.responseText;
+		} else if (contentType == 'application/json') {
+			var res = $.parseJSON(xhr.responseText);
+		} else {
+			failure('Response with invalid content type: ' + contentType);
+			return;
+		}
+		
+		if (xhr.status == 200)
+			success(res);
+		else
+			failure(res);
+	}, false);
+	
+	var req = { };
+	var method = 'GET'; // FIXME: do not default to either GET or POST, as some requests may change server state
+	
+	for (i in data) {
+		value = data[i];
+		
+		if (value instanceof File) {
+			fd.append(i, value);
+			method = 'POST';
+		} else {
+			req[i] = value;
+		}
+	}
+	
+	xhr.open(method, url + '?' + $.toJSON(req));
+	xhr.send(fd);
+}
+
 
