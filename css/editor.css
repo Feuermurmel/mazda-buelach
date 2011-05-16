@@ -6,31 +6,37 @@
 	background: #E8C1C1;
 	border: solid black 2px;
 }
+.editor [type=button] {
+	padding: 1px;
+}
+.editor [name=text-editor-img-list] {
+	width:250px;
+}
 .editor > .header{
 	background: #E8C1C1;
 	height: 100px;
 	position: relative;
 }
-.editor > .content{
+.editor > .header > .editor-schliessen-img {
+	position: absolute;
+	top: 10px;
+	right: 10px;
+	cursor: pointer;
+}
+.editor > .gallery-editor > .gallery-content{
+	float: left;
 	background: #E8C1C1;
 	padding: 5px;
 	padding-left: 0px;
 	margin-left: 0px;
 }
-.editor > .gallery-content{
-	background: #E8C1C1;
-	padding: 5px;
-	padding-left: 0px;
-	margin-left: 0px;
+.editor > .text-editor > .text-content {
+	width: 430px;
+	float: left;
 }
-
-.editor > .buttons{
-	background: #E8C1C1;
-	margin-left: 0px;
-	height:50px;
-	padding: 5px;
+.editor > .text-editor > .editor-img-list {
+	margin-left:450px;
 }
-
 .editor_popup {
 	position: fixed;
 	left: 100px;
