@@ -70,6 +70,14 @@ def galleryarea_exists(name):
 	return cursor.fetchone()[0] > 0;
 
 
+def galleryimage_exists(area_name, image_id):
+	cursor = get_connection().cursor()
+	
+	cursor.execute('select count(*) from gallery_image where area_name = ? and area_version = ? and uploaded_image_id = ?', [area_name, 'new', image_id])
+	
+	return cursor.fetchone()[0] > 0;
+
+
 def textarea_exists(name):
 	cursor = get_connection().cursor()
 	
@@ -132,12 +140,11 @@ def add_gallery_image(area_name, filename, blob, width, height, title, comment):
 def delete_gallery_image(area_name, image_id):
 	cursor = get_connection().cursor()
 	
-	cursor.execute('select blob from uploaded_image where id = ?', [image_id])
-	
-	return cursor.fetchone()[0]
+	cursor.execute('delete from gallery_image where uploaded_image_id = ?', [image_id])
+	cursor.execute('delete from uploaded_image where id = ?', [image_id])
 
 
-def cleanup_orphan_images(area_name, image_id):
+def cleanup_orphan_images():
 	pass
 
 

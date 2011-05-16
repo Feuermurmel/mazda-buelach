@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>JSON-RPC Unit Tests</title>
+		<style type="text/css">
+			#results p {
+				margin: 5px 0px;
+				padding: 4px;
+			}
+			
+			#results p p {
+				margin: 0px;
+				padding: 0px;
+			}
+			
+			#results .title {
+				margin-top: 10px;
+				margin-bottom: 5px;
+				font-weight: bold;
+			}
+			
+			#results .message {
+				background-color: #ccc;
+			}
+			
+			#results .success {
+				background-color: #ccf;
+			}
+			
+			#results .failure {
+				background-color: #fcc;
+			}
+		</style>
+	</head>
+	<body>
+		<h2>JSON-RPC Unit Tests</h2>
+		<p>Please select an image and hit the button!</p>
+		<div>
+			<input type="file" name="file" />
+			<input type="button" name="button" value="Start" />
+			<p id="results"></p>
+		</div>
+		<script src="../js/jquery-1.5.min.js"></script>
+		<script src="../js/jquery.json-2.2.min.js"></script>
+		<script src="../js/async.js"></script>
+		<script src="../js/dom.js"></script>
+		<script src="../js/lambda.js"></script>
+		<script src="jsonrpc.js"></script>
+		<script src="jsonrpc-tests.js"></script>
+		<script type="text/javascript">
+			$(function () {
+				$('input[name=button]').click(function () {
+					theFile = $('input[name=file]')[0].files[0];
+					runTests(makeTests(theFile));
+				})
+			});
+		</script>
+	</body>
+</html>

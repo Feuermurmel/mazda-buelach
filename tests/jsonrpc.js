@@ -1,10 +1,4 @@
 
-$(function () {
-	$('#test-gallery-image-upload [type=button]').click(testGalleryImageUpload);
-	$('#test-list-gallery-images [type=button]').click(testListGalleryImages);
-	$('#test-get-image [type=button]').click(testGetImage);
-});
-
 var handlerURL = '../cgi-bin/request-handler.py'
 
 function testGalleryImageUpload() {
