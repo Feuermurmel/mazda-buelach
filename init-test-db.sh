@@ -1,4 +1,4 @@
-#! /usr/bin/env bash -e -o pipefail
+#! /usr/bin/env bash
 
 cd "$(dirname "$BASH_SOURCE")/cgi-bin"
 
