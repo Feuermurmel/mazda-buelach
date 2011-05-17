@@ -61,7 +61,8 @@ function setUpEditor(type){
 				divToFill = divToClone.clone();
 				var image = new Image();
 				req = {
-					'action': 'get-image',
+					'action': 'get-gallery-image',
+					'area-name': areaName,
 					'image-id': imageList[i]['image-id']
 				}
 				console.log(imageList[i]['image-id']);
