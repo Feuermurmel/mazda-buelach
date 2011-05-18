@@ -46,13 +46,17 @@
 		<script src="../js/async.js"></script>
 		<script src="../js/dom.js"></script>
 		<script src="../js/lambda.js"></script>
-		<script src="jsonrpc.js"></script>
+		<script src="../js/jsonrpc.js"></script>
 		<script src="jsonrpc-tests.js"></script>
 		<script type="text/javascript">
 			$(function () {
 				$('input[name=button]').click(function () {
 					theFile = $('input[name=file]')[0].files[0];
-					runTests(makeTests(theFile));
+					
+					if (theFile === undefined)
+						alert('Please select an image!');
+					else
+						runTests(makeTests(theFile));
 				})
 			});
 		</script>
