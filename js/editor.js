@@ -12,50 +12,35 @@ $(function(){
 	});
 });
 
-
 function callEditor(type){
 	$('.editor_popup').load('editor.html', function() { setUpEditor(type);});
 }
 
 function setUpEditor(type){
 	
-	
-	// Funktionen
+	// Funktionen für die Gallery
 	function uploadGalleryImage() {
-		var fd = new FormData();
-		var xhr = new XMLHttpRequest();
-		console.log($("[name=title]").val());
-		console.log($("[name=comment]").val());
+		var file = $(".gallery-editor [name=picture]")[0].files[0];
+		if (file === undefined) {
+			alert('Please select a file.');
+			return
+		}
 		data = {
 			'action': 'upload-gallery-image',
 			'area-name': areaName,
 			'title':$(".gallery-editor [name=title]").val(),
-			'comment':$(".gallery-editor [name=comment]").val()
+			'comment':$(".gallery-editor [name=comment]").val(),
+			'image':file
 		};
-		
-		fd.append("image", $(".gallery-editor [name=picture]")[0].files[0]);
-	
-		xhr.addEventListener("load", function (evt) {
-			console.log(evt.target.responseText);
-			showGallery();
-		}, false);
-		xhr.addEventListener("error", function (evt) {
-			console.log(evt.target.responseText);
-		}, false);
-		
-		xhr.open("POST", "cgi-bin/request-handler.py?" + $.toJSON(data));
-		xhr.send(fd);
+		jsonrpc(handlerURL, data, showGallery, function () { alert("Bild hochladen Fehlgeschlagen") });
 	}
-	function uploadTextImage() {
-		
-	}
-	
 	function showGallery() {
-		var fd = new FormData();
-		var xhr = new XMLHttpRequest();
 		$('.gallery-content').empty();
-		xhr.addEventListener('load', function(evt) {
-			imageList = $.evalJSON(evt.target.responseText);
+		req = {
+			'action': 'list-gallery-images',
+			'area-name': areaName
+		}
+		jsonrpc(handlerURL, req, function(imageList) {
 			for(i = 0; i < imageList.length ; i++)
 			{
 				divToFill = divToClone.clone();
@@ -65,8 +50,8 @@ function setUpEditor(type){
 					'area-name': areaName,
 					'image-id': imageList[i]['image-id']
 				}
-				console.log(imageList[i]['image-id']);
-				image.src = "cgi-bin/request-handler.py?" + $.toJSON(req);
+				
+				image.src = handlerURL + '?' + $.toJSON(req);
 				$(image).width('100px');
 				$(image).height('100px');
 				
@@ -75,14 +60,16 @@ function setUpEditor(type){
 				$('.comment', divToFill).append(imageList[i]['comment']);
 				$('.gallery-content').append(divToFill);
 			}
-			
-		}, false);
-		req = {
-			'action': 'list-gallery-images',
-			'area-name': areaName
-		}
-		xhr.open('GET', "cgi-bin/request-handler.py" + '?' + $.toJSON(req));
-		xhr.send(fd);
+		}, function() { alert("fehler");}
+		);
+	}
+	
+	// Funktionen für den Texteditor
+	function uploadTextImage() {
+		alert("Funktioniert");
+	}
+	function deleteTextImage () {
+		
 	}
 	function insertImageInText() {
 		textarea = $(".editor [name=editor-textarea]")   
@@ -93,27 +80,20 @@ function setUpEditor(type){
 		textarea[0].value = str;  // String in der Textarea einsetzten
 		textarea[0].setSelectionRange(pos + imgString.length , pos + imgString.length);  // Cursor hinter dem Bild setzten
 	}
-	function loadImageList () {
-		var fd = new FormData();
-		var xhr = new XMLHttpRequest();
+	function loadImageList () {		
 		var imageListElem = $(".editor [name=text-editor-img-list]")[0];
-		console.log("im loadImageList");
-		xhr.addEventListener('load', function(evt) {
-			imageListElem.length = null;
-			imageList = $.evalJSON(evt.target.responseText);
-			console.log(imageList.length);
-			for(i = 0; i < imageList.length ; i++)
-			{
-				console.log(i);
-				imageListElem.options[imageListElem.length] = new Option(imageList[i]['image-id'], imageList[i]['image-id'], false, false);
-			}
-		}, false);
 		req = {
 			'action': 'list-gallery-images',
 			'area-name': areaName
 		}
-		xhr.open('GET', "cgi-bin/request-handler.py" + '?' + $.toJSON(req));
-		xhr.send(fd);
+		jsonrpc(handlerURL, req, function(imageList) {
+			imageListElem.length = null;
+			for(i = 0; i < imageList.length ; i++)
+			{
+				imageListElem.options[imageListElem.length] = new Option(imageList[i]['image-id'], imageList[i]['image-id'], false, false);
+			}
+		}, function() { alert("fehler");}
+		);
 	}
 	
 	function closeEditor(){
@@ -123,6 +103,7 @@ function setUpEditor(type){
 	// -----------------------------------------------------------------
 	// Variabeln
 	var areaName = $(".editable").attr("areaname");
+	var handlerURL = '../cgi-bin/request-handler.py'
 	
 	
 	// -----------------------------------------------------------------
@@ -142,8 +123,7 @@ function setUpEditor(type){
 		loadImageList();
 		$('.gallery').append("Texteditor");
 		$(".editor [name=picture-insert]").click(insertImageInText);
+		$(".editor [name=upload-text-picture]").change(uploadTextImage);
+		$(".editor [name=picture-remove]").click(deleteTextImage);
 	}
-	
 }
-
-
