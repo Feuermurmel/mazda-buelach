@@ -2,6 +2,7 @@
 function makeTests(testImage) {
 	var testGalleryArea = 'test-gallery'
 	var testTextArea = 'test-text'
+	var testContent = 'foo bar baz'
 	var imageIds = null;
 
 	return [
@@ -147,6 +148,26 @@ function makeTests(testImage) {
 					}, failure);
 				}, success, failure);
 			}
+		},
+		// Text area content
+		{
+			'name': 'get text area content',
+			'test': function (success, failure) {
+				rpc.get_text_content(testTextArea, function (v) {
+					message('Got content: ' + v.content);
+					success();
+				}, failure);
+			}
+		},
+		{
+			'name': 'set text area content',
+			'test': function (success, failure) {
+				rpc.update_text_content(testTextArea, testContent, function (vData) {
+					rpc.get_text_content(testTextArea, function (v) {
+						check(v.content == testContent, 'content does not match!', success, failure);
+					}, failure);
+				}, failure);
+			}
 		}
 	]
 }
@@ -282,6 +303,19 @@ var rpc = {
 			'action': 'delete-text-image',
 			'area-name': area_name,
 			'image-id': image_id
+		}, success, failure);
+	},
+	'get_text_content': function (area_name, success, failure) {
+		jsonrpc(handlerURL, {
+			'action': 'get-text-content',
+			'area-name': area_name
+		}, success, failure);
+	},
+	'update_text_content': function (area_name, content, success, failure) {
+		jsonrpc(handlerURL, {
+			'action': 'update-text-content',
+			'area-name': area_name,
+			'content': content
 		}, success, failure);
 	}
 }

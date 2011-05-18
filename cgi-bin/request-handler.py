@@ -74,6 +74,14 @@ class Handler:
 	@db.in_transaction
 	def get_text_image(self, area_name, image_id):
 		return jsonrpc.BareResponse('image/jpeg', db.get_text_image(area_name, image_id))
+	
+	@db.in_transaction
+	def get_text_content(self, area_name):
+		return db.get_text_content(area_name)
+	
+	@db.in_transaction
+	def update_text_content(self, area_name, content):
+		db.update_text_content(area_name, content)
 
 
 jsonrpc.handle_request(Handler())

@@ -258,6 +258,31 @@ def delete_text_image(area_name, image_id):
 	cursor.execute('delete from text_image where text_area_name = ? and version = ? and id = ?', [area_name, 'new', image_id])
 
 
+def get_text_content(area_name):
+	if not textarea_exists(area_name):
+		raise KeyError(404, 'No such text area: ' + area_name)
+	
+	cursor = get_connection().cursor()
+	
+	cursor.execute('select count(*) from text_area_content where text_area_name = ? and version = ?', [area_name, 'new'])
+	if (cursor.fetchone()[0] == 0):
+		return { 'content': '' }
+	
+	cursor.execute('select content from text_area_content where text_area_name = ? and version = ?', [area_name, 'new'])
+	
+	return { 'content': cursor.fetchone()[0] }
+
+
+def update_text_content(area_name, content):
+	if not textarea_exists(area_name):
+		raise KeyError(404, 'No such text area: ' + area_name)
+	
+	cursor = get_connection().cursor()
+	
+	cursor.execute('delete from text_area_content where text_area_name = ? and version = ?', [area_name, 'new']) # deletes current content, if there is one
+	cursor.execute('insert into text_area_content(text_area_name, version, content) values (?, ?, ?)', [area_name, 'new', content])
+
+
 def cleanup_orphan_images():
 	pass
 
