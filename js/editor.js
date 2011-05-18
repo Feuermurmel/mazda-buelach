@@ -22,29 +22,19 @@ function setUpEditor(type){
 	
 	// Funktionen
 	function uploadGalleryImage() {
-		var fd = new FormData();
-		var xhr = new XMLHttpRequest();
-		console.log($("[name=title]").val());
-		console.log($("[name=comment]").val());
+		var file = $(".gallery-editor [name=picture]")[0].files[0];
+		if (file === undefined) {
+			alert('Please select a file.');
+			return
+		}
 		data = {
 			'action': 'upload-gallery-image',
 			'area-name': areaName,
 			'title':$(".gallery-editor [name=title]").val(),
-			'comment':$(".gallery-editor [name=comment]").val()
+			'comment':$(".gallery-editor [name=comment]").val(),
+			'image':file
 		};
-		
-		fd.append("image", $(".gallery-editor [name=picture]")[0].files[0]);
-	
-		xhr.addEventListener("load", function (evt) {
-			console.log(evt.target.responseText);
-			showGallery();
-		}, false);
-		xhr.addEventListener("error", function (evt) {
-			console.log(evt.target.responseText);
-		}, false);
-		
-		xhr.open("POST", "cgi-bin/request-handler.py?" + $.toJSON(data));
-		xhr.send(fd);
+		jsonrpc(handlerURL, data, showGallery, function () { alert("Bild hochladen Fehlgeschlagen") });
 	}
 	function uploadTextImage() {
 		
@@ -80,7 +70,7 @@ function setUpEditor(type){
 			'action': 'list-gallery-images',
 			'area-name': areaName
 		}
-		xhr.open('GET', "cgi-bin/request-handler.py" + '?' + $.toJSON(req));
+		xhr.open('GET', handlerURL + '?' + $.toJSON(req));
 		xhr.send(fd);
 	}
 	function insertImageInText() {
@@ -111,7 +101,7 @@ function setUpEditor(type){
 			'action': 'list-gallery-images',
 			'area-name': areaName
 		}
-		xhr.open('GET', "cgi-bin/request-handler.py" + '?' + $.toJSON(req));
+		xhr.open('GET', handlerURL + '?' + $.toJSON(req));
 		xhr.send(fd);
 	}
 	
@@ -122,6 +112,7 @@ function setUpEditor(type){
 	// -----------------------------------------------------------------
 	// Variabeln
 	var areaName = $(".editable").attr("areaname");
+	var handlerURL = '../cgi-bin/request-handler.py'
 	
 	
 	// -----------------------------------------------------------------
