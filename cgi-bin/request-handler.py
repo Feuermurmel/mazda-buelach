@@ -19,9 +19,9 @@ class Handler:
 		try:
 			return method(**kwargs)
 		except ValueError as e:
-			raise CGIRequestError(400, '%s: %s' % (type(e).__name__, e))
+			raise jsonrpc.GIRequestError(400, '%s: %s' % (type(e).__name__, e))
 		except KeyError as e:
-			raise CGIRequestError(404, '%s: %s' % (type(e).__name__, e))
+			raise jsonrpc.CGIRequestError(404, '%s: %s' % (type(e).__name__, e))
 	
 	@db.in_transaction
 	def upload_gallery_image(self, area_name, image, title, comment):
@@ -60,7 +60,7 @@ class Handler:
 	
 	@db.in_transaction
 	def list_text_images(self, area_name):
-		return db.get_text_images(area_name)
+		return db.list_text_images(area_name)
 	
 	@db.in_transaction
 	def delete_text_image(self, area_name, image_id):

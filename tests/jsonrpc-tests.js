@@ -1,9 +1,11 @@
 
 function makeTests(testImage) {
 	var testGalleryArea = 'test-gallery'
+	var testTextArea = 'test-text'
 	var imageIds = null;
 
 	return [
+		// Gallery area tests
 		{
 			'name': 'remove all gallery images',
 			'test': function (success, failure) {
@@ -95,6 +97,56 @@ function makeTests(testImage) {
 					}, failure);
 				}, failure);
 			}
+		},
+		// Text area tests
+		{
+			'name': 'remove all text area images',
+			'test': function (success, failure) {
+				rpc.list_text_images(testTextArea, function (vImages) {
+					async.map(vImages, function (vImage, success, failure) {
+						message('Deleting image: ' + vImage['image-id'])
+						rpc.delete_text_image(testTextArea, vImage['image-id'], success, failure);
+					}, function () {
+						rpc.list_text_images(testTextArea, function (v) {
+							check(v.length == 0, 'image list not empty', success, failure);
+						}, failure);
+					}, failure);
+				}, failure);
+			}
+		},
+		{
+			'name': 'upload text area images',
+			'test': function (success, failure) {
+				async.map(['foo', 'bar', 'baz'], function (v, success, failure) {
+					rpc.upload_text_image(testTextArea, testImage, function (v) {
+						message('Got image-id: ' + v['image-id'])
+						success(v['image-id']);
+					}, failure);
+				}, function (res) {
+					imageIds = res;
+					success();
+				}, failure);
+			}
+		},
+		{
+			'name': 'list text area images',
+			'test': function (success, failure) {
+				rpc.list_text_images(testTextArea, function (v) {
+					message('Got image list: ' + $.toJSON(v))
+					success();
+				}, failure);
+			}
+		},
+		{
+			'name': 'request text area images',
+			'test': function (success, failure) {
+				async.map(imageIds, function (v, success, failure) {
+					rpc.get_text_image(testTextArea, v, function (vData) {
+						message('Got image: ' + v);
+						success();
+					}, failure);
+				}, success, failure);
+			}
 		}
 	]
 }
@@ -170,11 +222,17 @@ var rpc = {
 			'area-name': area_name
 		}, success, failure);
 	},
+	'set_gallery_order': function (area_name, image_ids, success, failure) {
+		jsonrpc(handlerURL, {
+			'action': 'set-gallery-order',
+			'area-name': area_name,
+			'image-ids': image_ids
+		}, success, failure);
+	},
 	'get_gallery_image': function (area_name, image_id, success, failure) {
 		var image = new Image();
 		
 		$(image).load(function () { success(image); });
-		
 		$(image).error(function () { failure('bäääh!'); });
 		
 		request = {
@@ -185,11 +243,30 @@ var rpc = {
 		
 		image.src = handlerURL + '?' + $.toJSON(request);
 	},
+	'delete_gallery_image': function (area_name, image_id, success, failure) {
+		jsonrpc(handlerURL, {
+			'action': 'delete-gallery-image',
+			'area-name': area_name,
+			'image-id': image_id
+		}, success, failure);
+	},
+	'upload_text_image': function (area_name, image, success, failure) {
+		jsonrpc(handlerURL, {
+			'action': 'upload-text-image',
+			'area-name': area_name,
+			'image': image
+		}, success, failure);
+	},
+	'list_text_images': function (area_name, success, failure) {
+		jsonrpc(handlerURL, {
+			'action': 'list-text-images',
+			'area-name': area_name
+		}, success, failure);
+	},
 	'get_text_image': function (area_name, image_id, success, failure) {
 		var image = new Image();
 		
 		$(image).load(function () { success(image); });
-		
 		$(image).error(function () { failure('bäääh!'); });
 		
 		request = {
@@ -200,16 +277,9 @@ var rpc = {
 		
 		image.src = handlerURL + '?' + $.toJSON(request);
 	},
-	'set_gallery_order': function (area_name, image_ids, success, failure) {
+	'delete_text_image': function (area_name, image_id, success, failure) {
 		jsonrpc(handlerURL, {
-			'action': 'set-gallery-order',
-			'area-name': area_name,
-			'image-ids': image_ids
-		}, success, failure);
-	},
-	'delete_gallery_image': function (area_name, image_id, success, failure) {
-		jsonrpc(handlerURL, {
-			'action': 'delete-gallery-image',
+			'action': 'delete-text-image',
 			'area-name': area_name,
 			'image-id': image_id
 		}, success, failure);

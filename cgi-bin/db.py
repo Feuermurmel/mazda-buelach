@@ -87,7 +87,27 @@ def textarea_exists(area_name):
 	
 	cursor.execute('select count(*) from text_area where name = ?', [area_name])
 	
-	return cursor.execute.fetchone()[0] > 0;
+	return cursor.fetchone()[0] > 0;
+
+
+def textimage_exists(area_name, image_id):
+	if not textarea_exists(area_name):
+		raise KeyError(404, 'No such text image: ' + area_name)
+	
+	cursor = get_connection().cursor()
+	
+	cursor.execute('select count(*) from text_image where text_area_name = ? and version = ? and id = ?', [area_name, 'new', image_id])
+	
+	return cursor.fetchone()[0] > 0;
+
+
+def add_uploaded_image(blob, width, height):
+	cursor = get_connection().cursor()
+	
+	upload_date = time.mktime(datetime.datetime.now().timetuple())
+	cursor.execute('insert into uploaded_image(blob, width, height, upload_date) values (?, ?, ?, ?)', (blob, width, height, upload_date))
+	
+	return cursor.lastrowid
 
 
 def add_gallery_image(area_name, base_id, blob, width, height, title, comment):
@@ -110,8 +130,8 @@ def add_gallery_image(area_name, base_id, blob, width, height, title, comment):
 	res = cursor.fetchone()[0]
 	next_pos = 0 if res is None else res + 1
 	
-	cursor.execute('insert into uploaded_image(blob, width, height, upload_date) values (?, ?, ?, ?)', (blob, width, height, upload_date))
-	cursor.execute('insert into gallery_image(id, position, title, comment, version, gallery_area_name, uploaded_image_id) values (?, ?, ?, ?, ?, ?, ?)', (id, next_pos, title, comment, 'new', area_name, cursor.lastrowid))
+	uploaded_image_id = add_uploaded_image(blob, width, height);
+	cursor.execute('insert into gallery_image(id, position, title, comment, version, gallery_area_name, uploaded_image_id) values (?, ?, ?, ?, ?, ?, ?)', (id, next_pos, title, comment, 'new', area_name, uploaded_image_id))
 	
 	return id
 
@@ -183,6 +203,59 @@ def update_textarea(name, content):
 	cursor.execute('update text_area set content = ? where area_name = ? and area_version = ?', [content, name, 'new'])
 	
 	return cursor.fetchone()[0]
+
+
+def add_text_image(area_name, base_id, blob, width, height):
+	if not textarea_exists(area_name):
+		raise KeyError(404, 'No such text area: ' + area_name)
+	
+	cursor = get_connection().cursor()
+	counter = 0
+	upload_date = time.mktime(datetime.datetime.now().timetuple())
+	
+	while True:
+		counter += 1
+		id = base_id if counter < 2 else '%s_%s' % (base_id, counter)
+		
+		cursor.execute('select count(*) from text_image where id = ? and version = ? and text_area_name = ?', [id, 'new', area_name])
+		
+		if cursor.fetchone()[0] == 0: break
+	
+	uploaded_image_id = add_uploaded_image(blob, width, height);
+	cursor.execute('insert into text_image(id, version, text_area_name, uploaded_image_id) values (?, ?, ?, ?)', (id, 'new', area_name, uploaded_image_id))
+	
+	return id
+
+
+def list_text_images(area_name, version = 'new'):
+	if not textarea_exists(area_name):
+		raise KeyError(404, 'No such text area: ' + area_name)
+	
+	cursor = get_connection().cursor()
+	
+	cursor.execute('select text_image.id, width, height, upload_date from text_image, uploaded_image where text_area_name = ? and version = ? and text_image.uploaded_image_id = uploaded_image.id', [area_name, version])
+	
+	return [{ 'image-id': image_id, 'width': width, 'height': height, 'upload-date': upload_date } for image_id, width, height, upload_date in cursor.fetchall()]
+
+
+def get_text_image(area_name, image_id):
+	if not textimage_exists(area_name, image_id):
+		raise jsonrpc.CGIRequestError(404, 'No such image in text area: %s, %s' % (area_name, image_id))
+	
+	cursor = get_connection().cursor()
+	
+	cursor.execute('select blob from text_image, uploaded_image where text_area_name = ? and version = ? and text_image.id = ? and uploaded_image_id = uploaded_image.id', [area_name, 'new', image_id])
+	
+	return cursor.fetchone()[0]
+
+
+def delete_text_image(area_name, image_id):
+	if not textimage_exists(area_name, image_id):
+		raise jsonrpc.CGIRequestError(404, 'No such image in text area: %s, %s' % (area_name, image_id))
+	
+	cursor = get_connection().cursor()
+	
+	cursor.execute('delete from text_image where text_area_name = ? and version = ? and id = ?', [area_name, 'new', image_id])
 
 
 def cleanup_orphan_images():
