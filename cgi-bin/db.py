@@ -24,7 +24,7 @@ def get_connection(allow_empty = False):
 	return connection
 
 
-@util.decorator
+#@util.decorator
 def in_transaction(fn):
 	def res(*args, **kwargs):
 		with get_connection():
@@ -46,6 +46,9 @@ def create_textarea(area_name):
 
 
 def get_textarea_content(area_name, version = 'new'):
+	if not textarea_exists(area_name):
+		raise KeyError(404, 'No such text area: ' + area_name)
+	
 	cursor = get_connection().cursor()
 	
 	cursor.execute('select content from text_area where area_name = ? and area_version = ?', [area_name, version])
@@ -69,6 +72,9 @@ def galleryarea_exists(area_name):
 
 
 def galleryimage_exists(area_name, image_id):
+	if not galleryarea_exists(area_name):
+		raise KeyError(404, 'No such gallery: ' + area_name)
+	
 	cursor = get_connection().cursor()
 	
 	cursor.execute('select count(*) from gallery_image where gallery_area_name = ? and version = ? and id = ?', [area_name, 'new', image_id])
@@ -84,37 +90,10 @@ def textarea_exists(area_name):
 	return cursor.execute.fetchone()[0] > 0;
 
 
-def list_gallery_images(area_name, version = 'new'):
-	cursor = get_connection().cursor()
-	
-	cursor.execute('select gallery_image.id, title, comment, width, height, upload_date from gallery_image, uploaded_image where gallery_area_name = ? and version = ? and gallery_image.uploaded_image_id = uploaded_image.id order by position', [area_name, version])
-	
-	return [{ 'image-id': image_id, 'title': title, 'comment': comment, 'width': width, 'height': height, 'upload-date': upload_date } for image_id, title, comment, width, height, upload_date in cursor.fetchall()]
-
-
-def set_gallery_order(area_name, image_ids):
-	cursor = get_connection().cursor()
-	
-	cursor.execute('select gallery_image.id from gallery_image where gallery_area_name = ? and version = ?', [area_name, 'new'])
-	old_ids = [i[0] for i in cursor.fetchall()]
-	
-	if sorted(image_ids) != sorted(old_ids):
-		raise Exception('The list of new image ids is not a permutation of the list of old image ids: ' + old_ids)
-	
-	params = [(position, area_name, 'new', id) for position, id in zip(itertools.count(), image_ids)]
-	cursor.executemany('update gallery_image set position = -1 - ? where gallery_area_name = ? and version = ? and id = ?', params) # to avoid having intermittenly two images with the same position, we first set all the position values to -1 - <position> and then flip them aftwerwards
-	cursor.execute('update gallery_image set position = -1 - position where gallery_area_name = ? and version = ?', [area_name, 'new'])
-
-
-def get_gallery_image(area_name, image_id):
-	cursor = get_connection().cursor()
-	
-	cursor.execute('select blob from gallery_image, uploaded_image where gallery_area_name = ? and version = ? and gallery_image.id = ? and uploaded_image_id = uploaded_image.id', [area_name, 'new', image_id])
-	
-	return cursor.fetchone()[0]
-
-
 def add_gallery_image(area_name, base_id, blob, width, height, title, comment):
+	if not galleryarea_exists(area_name):
+		raise KeyError(404, 'No such gallery: ' + area_name)
+	
 	cursor = get_connection().cursor()
 	counter = 0
 	upload_date = time.mktime(datetime.datetime.now().timetuple())
@@ -138,6 +117,9 @@ def add_gallery_image(area_name, base_id, blob, width, height, title, comment):
 
 
 def update_gallery_image(area_name, image_id, title, comment):
+	if not galleryimage_exists(area_name, image_id):
+		raise jsonrpc.CGIRequestError(404, 'No such image in gallery: %s, %s' % (area_name, image_id))
+	
 	cursor = get_connection().cursor()
 	
 	cursor.execute('update gallery_image set title = ?, comment = ? where gallery_area_name = ? and version = ? and id = ?', [title, comment, area_name, 'new', image_id])
@@ -145,29 +127,66 @@ def update_gallery_image(area_name, image_id, title, comment):
 	return id
 
 
+def list_gallery_images(area_name, version = 'new'):
+	if not galleryarea_exists(area_name):
+		raise KeyError(404, 'No such gallery: ' + area_name)
+	
+	cursor = get_connection().cursor()
+	
+	cursor.execute('select gallery_image.id, title, comment, width, height, upload_date from gallery_image, uploaded_image where gallery_area_name = ? and version = ? and gallery_image.uploaded_image_id = uploaded_image.id order by position', [area_name, version])
+	
+	return [{ 'image-id': image_id, 'title': title, 'comment': comment, 'width': width, 'height': height, 'upload-date': upload_date } for image_id, title, comment, width, height, upload_date in cursor.fetchall()]
+
+
+def set_gallery_order(area_name, image_ids):
+	if not galleryarea_exists(area_name):
+		raise KeyError(404, 'No such gallery: ' + area_name)
+	
+	cursor = get_connection().cursor()
+	
+	cursor.execute('select gallery_image.id from gallery_image where gallery_area_name = ? and version = ?', [area_name, 'new'])
+	old_ids = [i[0] for i in cursor.fetchall()]
+	
+	if sorted(image_ids) != sorted(old_ids):
+		raise Exception('The list of new image ids is not a permutation of the list of old image ids: ' + old_ids)
+	
+	params = [(position, area_name, 'new', id) for position, id in zip(itertools.count(), image_ids)]
+	cursor.executemany('update gallery_image set position = -1 - ? where gallery_area_name = ? and version = ? and id = ?', params) # to avoid having intermittenly two images with the same position, we first set all the position values to -1 - <position> and then flip them aftwerwards
+	cursor.execute('update gallery_image set position = -1 - position where gallery_area_name = ? and version = ?', [area_name, 'new'])
+
+
+def get_gallery_image(area_name, image_id):
+	if not galleryimage_exists(area_name, image_id):
+			raise jsonrpc.CGIRequestError(404, 'No such image in gallery: %s, %s' % (area_name, image_id))
+	
+	cursor = get_connection().cursor()
+	
+	cursor.execute('select blob from gallery_image, uploaded_image where gallery_area_name = ? and version = ? and gallery_image.id = ? and uploaded_image_id = uploaded_image.id', [area_name, 'new', image_id])
+	
+	return cursor.fetchone()[0]
+
+
 def delete_gallery_image(area_name, image_id):
+	if not galleryimage_exists(area_name, image_id):
+		raise jsonrpc.CGIRequestError(404, 'No such image in gallery: %s, %s' % (area_name, image_id))
+	
 	cursor = get_connection().cursor()
 	
 	cursor.execute('delete from gallery_image where gallery_area_name = ? and version = ? and id = ?', [area_name, 'new', image_id])
 
 
-def cleanup_orphan_images():
-	pass
-
-
 def update_textarea(name, content):
+	if not textarea_exists(area_name):
+		raise KeyError(404, 'No such text area: ' + area_name)
+	
 	cursor = get_connection().cursor()
 	cursor.execute('update text_area set content = ? where area_name = ? and area_version = ?', [content, name, 'new'])
 	
 	return cursor.fetchone()[0]
 
 
-def add_image(name, version = None):
-	'Adds an image for the specified '
-	cursor = get_connection().cursor()
-	cursor.execute('select content from text_area where area_name = ?', [name])
-	
-	return cursor.fetchone()[0]
+def cleanup_orphan_images():
+	pass
 
 
 #def create_new_version():

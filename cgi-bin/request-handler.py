@@ -16,13 +16,15 @@ class Handler:
 		if not isinstance(method, types.MethodType):
 			raise jsonrpc.CGIRequestError(400, 'Unknown command: ' + action)
 		
-		return method(**kwargs)
+		try:
+			return method(**kwargs)
+		except ValueError as e:
+			raise CGIRequestError(400, '%s: %s' % (type(e).__name__, e))
+		except KeyError as e:
+			raise CGIRequestError(404, '%s: %s' % (type(e).__name__, e))
 	
 	@db.in_transaction
 	def upload_gallery_image(self, area_name, image, title, comment):
-		if not db.galleryarea_exists(area_name):
-			raise jsonrpc.CGIRequestError(404, 'No such gallery: ' + area_name)
-			
 		filename, image_file = image
 		image_blob = image_file.read()
 		
@@ -32,41 +34,23 @@ class Handler:
 	
 	@db.in_transaction
 	def update_gallery_image(self, area_name, image_id, title, comment):
-		if not db.galleryarea_exists(area_name):
-			raise jsonrpc.CGIRequestError(404, 'No such gallery: ' + area_name)
-		
 		db.update_gallery_image(area_name, image_id, title, comment)
 	
 	@db.in_transaction
 	def list_gallery_images(self, area_name):
-		if not db.galleryarea_exists(area_name):
-			raise jsonrpc.CGIRequestError(404, 'No such gallery: ' + area_name)
-		
 		return db.list_gallery_images(area_name)
 	
 	@db.in_transaction
 	def set_gallery_order(self, area_name, image_ids):
-		if not db.galleryarea_exists(area_name):
-			raise jsonrpc.CGIRequestError(404, 'No such gallery: ' + area_name)
-		
 		return db.set_gallery_order(area_name, image_ids)
 	
 	@db.in_transaction
 	def delete_gallery_image(self, area_name, image_id):
-		if not db.galleryarea_exists(area_name):
-			raise jsonrpc.CGIRequestError(404, 'No such gallery: ' + area_name)
-		
-		if not db.galleryimage_exists(area_name, image_id):
-			raise jsonrpc.CGIRequestError(404, 'No image in gallery: %s, %s' % (area_name, image_id))
-		
 		db.delete_gallery_image(area_name, image_id)
 		db.cleanup_orphan_images()
 	
 	@db.in_transaction
-	def upload_text_image(self, area_name, image):		
-		if not db.textarea_exists(area_name):
-			raise jsonrpc.CGIRequestError(404, 'No such text area: ' + area_name)
-			
+	def upload_text_image(self, area_name, image):
 		filename, image_file = image
 		image_blob = image_file.read()
 		
@@ -76,19 +60,10 @@ class Handler:
 	
 	@db.in_transaction
 	def list_text_images(self, area_name):
-		if not db.textarea_exists(area_name):
-			raise jsonrpc.CGIRequestError(404, 'No such text area: ' + area_name)
-		
 		return db.get_text_images(area_name)
 	
 	@db.in_transaction
 	def delete_text_image(self, area_name, image_id):
-		if not db.textarea_exists(area_name):
-			raise jsonrpc.CGIRequestError(404, 'No such text area: ' + area_name)
-		
-		if not db.textimage_exists(area_name, image_id):
-			raise jsonrpc.CGIRequestError(404, 'No image in text area: %s, %s' % (area_name, image_id))
-		
 		db.delete_text_image(area_name, image_id)
 		db.cleanup_orphan_images()
 	

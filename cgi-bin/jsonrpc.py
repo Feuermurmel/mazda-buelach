@@ -5,9 +5,9 @@ from os import path
 from urllib import parse
 
 class CGIRequestError(Exception):
-	def __init__(self, status_code, message):
-		self.status_code = status_code
-		self.message = message
+	def __init__(self, status, body = ''):
+		self.status = status
+		self.body = body
 	
 	def __str__(self):
 		return 'HTTP Error %s' % self.status_code
@@ -93,12 +93,12 @@ def handle_request(handler):
 			for i in storage:
 				files[i] = (storage[i].filename, storage[i].file)
 		elif method != 'get':
-			raise CGIRequestError(405, 'Method Not Allowed')
+			raise CGIRequestError(405)
 		
 		result = handler(data, files)
 		send_response(200, result)
 	except CGIRequestError as e:
-		send_response(e.status_code, e.message)
+		send_response(e.status, e.body)
 	except:
 		lines = fromat_stacktrace(*sys.exc_info())
 		send_response(500, '\n'.join(lines))
