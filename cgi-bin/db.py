@@ -1,4 +1,4 @@
-import os, stat, time, datetime, sqlite3, config, util
+import os, stat, itertools, time, datetime, sqlite3, config, util
 
 
 # Constants used in the 'version' column of the 'area' table to distinguish the active from the prepared version.
@@ -14,7 +14,7 @@ def get_connection(allow_empty = False):
 			raise Exception('The database has not yet been created. Please use crete-db.py to do so.')
 		
 		# Create an empty, world-read-and-writable file
-		# TODO: is this a good idea
+		# TODO: is this a good idea?
 		with open(config.paths.db, 'wb'): pass
 		os.chmod(config.paths.db, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH | stat.S_IWOTH)
 	
@@ -38,34 +38,32 @@ def exists():
 	return os.path.exists(config.paths.db)
 
 
-def create_textarea(name):
-	if not galleryarea_exists(name):
+def create_textarea(area_name):
+	if not galleryarea_exists(area_name):
 		cursor = get_connection().cursor()
 		
-		cursor.execute('insert into area(name, version) values (?, ?)', [name, 'new'])
-		cursor.execute('insert into text_area(area_name, area_version, content) values (?, ?, ?)', [name, 'new', ''])
+		cursor.execute('insert into text_area(name) values (?)', [area_name])
 
 
-def get_textarea(name, version):
+def get_textarea_content(area_name, version = 'new'):
 	cursor = get_connection().cursor()
 	
-	cursor.execute('select content from text_area where area_name = ? and area_version = ?', [name, version])
+	cursor.execute('select content from text_area where area_name = ? and area_version = ?', [area_name, version])
 	
 	return cursor.fetchone()[0]
 
 
-def create_galleryarea(name):
-	if not galleryarea_exists(name):
+def create_galleryarea(area_name):
+	if not galleryarea_exists(area_name):
 		cursor = get_connection().cursor()
 		
-		cursor.execute('insert into area(name, version) values (?, ?)', [name, 'new'])
-		cursor.execute('insert into gallery_area(area_name, area_version) values (?, ?)', [name, 'new'])
+		cursor.execute('insert into gallery_area(name) values (?)', [area_name])
 
 
-def galleryarea_exists(name):
+def galleryarea_exists(area_name):
 	cursor = get_connection().cursor()
 	
-	cursor.execute('select count(*) from gallery_area where area_name = ? and area_version = ?', [name, 'new'])
+	cursor.execute('select count(*) from gallery_area where name = ?', [area_name])
 	
 	return cursor.fetchone()[0] > 0;
 
@@ -73,66 +71,76 @@ def galleryarea_exists(name):
 def galleryimage_exists(area_name, image_id):
 	cursor = get_connection().cursor()
 	
-	cursor.execute('select count(*) from gallery_image where area_name = ? and area_version = ? and uploaded_image_id = ?', [area_name, 'new', image_id])
+	cursor.execute('select count(*) from gallery_image where gallery_area_name = ? and version = ? and id = ?', [area_name, 'new', image_id])
 	
 	return cursor.fetchone()[0] > 0;
 
 
-def textarea_exists(name):
+def textarea_exists(area_name):
 	cursor = get_connection().cursor()
 	
-	cursor.execute('select count(*) from text_area where area_name = ? and area_version = ?', [name, 'new'])
+	cursor.execute('select count(*) from text_area where name = ?', [area_name])
 	
 	return cursor.execute.fetchone()[0] > 0;
 
 
-def get_gallery_images(area_name):
+def list_gallery_images(area_name, version = 'new'):
 	cursor = get_connection().cursor()
 	
-	cursor.execute('select id, title, comment, width, height, upload_date from gallery_image, uploaded_image where area_name = ? and gallery_image.uploaded_image_id = uploaded_image.id order by position', [area_name])
+	cursor.execute('select gallery_image.id, title, comment, width, height, upload_date from gallery_image, uploaded_image where gallery_area_name = ? and version = ? and gallery_image.uploaded_image_id = uploaded_image.id order by position', [area_name, version])
 	
 	return [{ 'image-id': image_id, 'title': title, 'comment': comment, 'width': width, 'height': height, 'upload-date': upload_date } for image_id, title, comment, width, height, upload_date in cursor.fetchall()]
 
 
-def add_gallery_image(area_name, filename, blob, width, height, title, comment):
+def set_gallery_order(area_name, image_ids):
 	cursor = get_connection().cursor()
-	counter = 1
+	
+	cursor.execute('select gallery_image.id from gallery_image where gallery_area_name = ? and version = ?', [area_name, 'new'])
+	old_ids = [i[0] for i in cursor.fetchall()]
+	
+	if sorted(image_ids) != sorted(old_ids):
+		raise Exception('The list of new image ids is not a permutation of the list of old image ids: ' + old_ids)
+	
+	params = [(position, area_name, 'new', id) for position, id in zip(itertools.count(), image_ids)]
+	cursor.executemany('update gallery_image set position = -1 - ? where gallery_area_name = ? and version = ? and id = ?', params) # to avoid having intermittenly two images with the same position, we first set all the position values to -1 - <position> and then flip them aftwerwards
+	cursor.execute('update gallery_image set position = -1 - position where gallery_area_name = ? and version = ?', [area_name, 'new'])
+
+
+def get_gallery_image(area_name, image_id):
+	cursor = get_connection().cursor()
+	
+	cursor.execute('select blob from gallery_image, uploaded_image where gallery_area_name = ? and version = ? and gallery_image.id = ? and uploaded_image_id = uploaded_image.id', [area_name, 'new', image_id])
+	
+	return cursor.fetchone()[0]
+
+
+def add_gallery_image(area_name, base_id, blob, width, height, title, comment):
+	cursor = get_connection().cursor()
+	counter = 0
 	upload_date = time.mktime(datetime.datetime.now().timetuple())
 	
 	while True:
-		if counter < 2:
-			id = filename
-		else:
-			id = '%s_%s' % (filename, counter)
-		
-		cursor.execute('select count(*) from uploaded_image where id = ?', [id])
-		
-		if cursor.fetchone()[0] == 0:
-			break
-		
 		counter += 1
+		id = base_id if counter < 2 else '%s_%s' % (base_id, counter)
+		
+		cursor.execute('select count(*) from gallery_image where id = ? and version = ? and gallery_area_name = ?', [id, 'new', area_name])
+		
+		if cursor.fetchone()[0] == 0: break
 	
-	cursor.execute('select max(position) from gallery_image where area_name = ? and area_version = ?', [area_name, 'new'])
-	next_pos = cursor.fetchone()[0]
+	cursor.execute('select max(position) from gallery_image where gallery_area_name = ? and version = ?', [area_name, 'new'])
+	res = cursor.fetchone()[0]
+	next_pos = 0 if res is None else res + 1
 	
-	data = {
-		'area_name': area_name,
-		'area_name_': area_name, # Python's sqlite3 interface does not allow using a given named parameter multiple times in the query
-		'area_version': 'new',
-		'area_version_': 'new',
-		'id': id,
-		'id_': id,
-		'blob': blob,
-		'width': width,
-		'height': height,
-		'upload_date': upload_date,
-		'title': title,
-		'comment': comment,
-		'position': 0 if next_pos is None else next_pos + 1
-	}
+	cursor.execute('insert into uploaded_image(blob, width, height, upload_date) values (?, ?, ?, ?)', (blob, width, height, upload_date))
+	cursor.execute('insert into gallery_image(id, position, title, comment, version, gallery_area_name, uploaded_image_id) values (?, ?, ?, ?, ?, ?, ?)', (id, next_pos, title, comment, 'new', area_name, cursor.lastrowid))
 	
-	cursor.execute('insert into uploaded_image(id, blob, width, height, upload_date) values (:id, :blob, :width, :height, :upload_date)', data)
-	cursor.execute('insert into gallery_image(position, title, comment, area_name, area_version, uploaded_image_id) values (:position, :title, :comment, :area_name_, :area_version_, :id_)', data)
+	return id
+
+
+def update_gallery_image(area_name, image_id, title, comment):
+	cursor = get_connection().cursor()
+	
+	cursor.execute('update gallery_image set title = ?, comment = ? where gallery_area_name = ? and version = ? and id = ?', [title, comment, area_name, 'new', image_id])
 	
 	return id
 
@@ -140,20 +148,11 @@ def add_gallery_image(area_name, filename, blob, width, height, title, comment):
 def delete_gallery_image(area_name, image_id):
 	cursor = get_connection().cursor()
 	
-	cursor.execute('delete from gallery_image where uploaded_image_id = ?', [image_id])
-	cursor.execute('delete from uploaded_image where id = ?', [image_id])
+	cursor.execute('delete from gallery_image where gallery_area_name = ? and version = ? and id = ?', [area_name, 'new', image_id])
 
 
 def cleanup_orphan_images():
 	pass
-
-
-def get_image(image_id):
-	cursor = get_connection().cursor()
-	
-	cursor.execute('select blob from uploaded_image where id = ?', [image_id])
-	
-	return cursor.fetchone()[0]
 
 
 def update_textarea(name, content):

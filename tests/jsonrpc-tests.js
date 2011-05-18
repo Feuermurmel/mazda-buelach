@@ -11,18 +11,19 @@ function makeTests(testImage) {
 					async.map(vImages, function (vImage, success, failure) {
 						message('Deleting image: ' + vImage['image-id'])
 						rpc.delete_gallery_image(testGalleryArea, vImage['image-id'], success, failure);
-					}, success, failure);
-				}, function (msg) {
-					failure(msg);
-				});
+					}, function () {
+						rpc.list_gallery_images(testGalleryArea, function (v) {
+							check(v.length == 0, 'image list not empty', success, failure);
+						}, failure);
+					}, failure);
+				}, failure);
 			}
 		},
 		{
-			'name': 'upload images',
+			'name': 'upload gallery images',
 			'test': function (success, failure) {
 				async.map(['foo', 'bar', 'baz'], function (v, success, failure) {
-				//	message('Uploading ' + v + ' ...')
-					rpc.upload_gallery_image(testImage, testGalleryArea, v + ' title', v + ' comment', function (v) {
+					rpc.upload_gallery_image(testGalleryArea, testImage, v + ' title', v + ' comment', function (v) {
 						message('Got image-id: ' + v['image-id'])
 						success(v['image-id']);
 					}, failure);
@@ -33,20 +34,19 @@ function makeTests(testImage) {
 			}
 		},
 		{
-			'name': 'list images',
+			'name': 'list gallery images',
 			'test': function (success, failure) {
 				rpc.list_gallery_images(testGalleryArea, function (v) {
 					message('Got image list: ' + $.toJSON(v))
 					success();
-				}, failure);;
+				}, failure);
 			}
 		},
 		{
-			'name': 'request images',
+			'name': 'request gallery images',
 			'test': function (success, failure) {
-				console.log(imageIds)
 				async.map(imageIds, function (v, success, failure) {
-					rpc.get_image(v, function (vData) {
+					rpc.get_gallery_image(testGalleryArea, v, function (vData) {
 						message('Got image: ' + v);
 						success();
 					}, failure);
@@ -54,21 +54,44 @@ function makeTests(testImage) {
 			}
 		},
 		{
-			'name': 'set image order',
+			'name': 'update gallery images',
+			'test': function (success, failure) {
+				var newTitle = 'new title';
+				var newComment = 'new comment';
+				
+				async.map(imageIds, function (v, success, failure) {
+					rpc.update_gallery_image(testGalleryArea, v, newTitle, newComment, function (vData) {
+						message('Updated image: ' + v);
+						success();
+					}, failure);
+				}, function () {
+					rpc.list_gallery_images(testGalleryArea, function (v) {
+						message('Got image list: ' + $.toJSON(v));
+						
+						var res = v.every(function (v, k) {
+							return v['title'] == newTitle && v['comment'] == newComment;
+						});
+						
+						check(res, 'new titles or comments do not match', success, failure);
+					}, failure);
+				}, failure);
+			}
+		},
+		{
+			'name': 'set gallery image order',
 			'test': function (success, failure) {
 				// reverse the images in the gallery and test their order
 				imageIds.reverse()
 								
 				rpc.set_gallery_order(testGalleryArea, imageIds, function () {
-					rpc.get_image_list(testGalleryArea, function (vList) {
+					rpc.list_gallery_images(testGalleryArea, function (vList) {
+						message('Got image list: ' + $.toJSON(vList));
+						
 						var res = vList.every(function (v, k) {
 							return v['image-id'] == imageIds[k];
 						});
 						
-						if (res)
-							success();
-						else
-							failure();
+						check(res, 'new image ids do not match', success, failure);
 					}, failure);
 				}, failure);
 			}
@@ -98,6 +121,15 @@ function runTests(tests) {
 	});
 }
 
+function check(value, msg, success, failure) {
+	if (value) {
+		success();
+	} else {
+		message('Assertion failed: ' + msg, 'failure');
+		failure('assertion failure');
+	}
+}
+
 function message(text, type) {
 	if (type === undefined)
 		type = 'message';
@@ -114,11 +146,20 @@ function message(text, type) {
 var handlerURL = '../cgi-bin/request-handler.py'
 
 var rpc = {
-	'upload_gallery_image': function (image, area_name, title, comment, success, failure) {
+	'upload_gallery_image': function (area_name, image, title, comment, success, failure) {
 		jsonrpc(handlerURL, {
 			'action': 'upload-gallery-image',
-			'image': image,
 			'area-name': area_name,
+			'image': image,
+			'title': title,
+			'comment': comment
+		}, success, failure);
+	},
+	'update_gallery_image': function (area_name, image_id, title, comment, success, failure) {
+		jsonrpc(handlerURL, {
+			'action': 'update-gallery-image',
+			'area-name': area_name,
+			'image-id': image_id,
 			'title': title,
 			'comment': comment
 		}, success, failure);
@@ -129,19 +170,31 @@ var rpc = {
 			'area-name': area_name
 		}, success, failure);
 	},
-	'get_image': function (image_id, success, failure) {
+	'get_gallery_image': function (area_name, image_id, success, failure) {
 		var image = new Image();
 		
-		$(image).load(function () {
-			success(image);
-		});
+		$(image).load(function () { success(image); });
 		
-		$(image).error(function () {
-			failure('bäääh!');
-		});
+		$(image).error(function () { failure('bäääh!'); });
 		
 		request = {
-			'action': 'get-image',
+			'action': 'get-gallery-image',
+			'area-name': area_name,
+			'image-id': image_id
+		};
+		
+		image.src = handlerURL + '?' + $.toJSON(request);
+	},
+	'get_text_image': function (area_name, image_id, success, failure) {
+		var image = new Image();
+		
+		$(image).load(function () { success(image); });
+		
+		$(image).error(function () { failure('bäääh!'); });
+		
+		request = {
+			'action': 'get-text-image',
+			'area-name': area_name,
 			'image-id': image_id
 		};
 		

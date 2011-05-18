@@ -9,46 +9,42 @@ with db.get_connection(True) as connection:
 	cursor = connection.cursor()
 	
 	cursor.executescript('''
-		create table area(
-			name,
-			version,
-			primary key (name, version));
 		create table text_area(
-			area_name,
-			area_version,
-			content,
-			foreign key (area_name, area_version) references area (name, version),
-			primary key (area_name, area_version));
+			name not null,
+			primary key (name));
 		create table gallery_area(
-			area_name,
-			area_version,
-			foreign key (area_name, area_version) references area (name, version),
-			primary key (area_name, area_version));
+			name not null,
+			primary key (name));
+		create table text_area_content(
+			content not null,
+			version not null,
+			text_area_name not null,
+			foreign key (text_area_name) references text_area,
+			primary key (version, text_area_name));
 		create table uploaded_image(
-			id,
-			blob,
+			id integer primary key autoincrement,
+			blob not null,
 			width,
 			height,
-			upload_date,
-			primary key (id));
+			upload_date);
 		create table text_image(
-			name,
-			area_name,
-			area_version,
-			uploaded_image_id,
-			foreign key (area_name, area_version) references text_area (area_name, area_version),
-			foreign key (uploaded_image_id) references uploaded_image (id),
-			primary key (uploaded_image_id),
-			unique (area_name, area_version, name));
+			id not null,
+			version not null,
+			text_area_name not null,
+			uploaded_image_id not null,
+			foreign key (text_area_name) references text_area,
+			foreign key (uploaded_image_id) references uploaded_image,
+			primary key (id, version, text_area_name));
 		create table gallery_image(
-			position,
-			title,
-			comment,
-			area_name,
-			area_version,
-			uploaded_image_id,
-			foreign key (area_name, area_version) references gallery_area (area_name, area_version),
-			foreign key (uploaded_image_id) references uploaded_image (id),
-			primary key (uploaded_image_id),
-			unique (area_name, area_version, position));''')
+			id not null,
+			position not null,
+			title not null,
+			comment not null,
+			version not null,
+			gallery_area_name not null,
+			uploaded_image_id not null,
+			foreign key (gallery_area_name) references gallery_area,
+			foreign key (uploaded_image_id) references uploaded_image,
+			primary key (gallery_area_name, id, version),
+			unique (gallery_area_name, position, version));''')
 
