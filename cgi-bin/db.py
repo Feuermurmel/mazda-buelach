@@ -133,7 +133,7 @@ def add_gallery_image(area_name, base_id, blob, width, height, title, comment):
 	uploaded_image_id = add_uploaded_image(blob, width, height);
 	cursor.execute('insert into gallery_image(id, position, title, comment, version, gallery_area_name, uploaded_image_id) values (?, ?, ?, ?, ?, ?, ?)', (id, next_pos, title, comment, 'new', area_name, uploaded_image_id))
 	
-	return id
+	return { 'image-id': id }
 
 
 def update_gallery_image(area_name, image_id, title, comment):
@@ -143,8 +143,6 @@ def update_gallery_image(area_name, image_id, title, comment):
 	cursor = get_connection().cursor()
 	
 	cursor.execute('update gallery_image set title = ?, comment = ? where gallery_area_name = ? and version = ? and id = ?', [title, comment, area_name, 'new', image_id])
-	
-	return id
 
 
 def list_gallery_images(area_name, version = 'new'):
@@ -224,7 +222,7 @@ def add_text_image(area_name, base_id, blob, width, height):
 	uploaded_image_id = add_uploaded_image(blob, width, height);
 	cursor.execute('insert into text_image(id, version, text_area_name, uploaded_image_id) values (?, ?, ?, ?)', (id, 'new', area_name, uploaded_image_id))
 	
-	return id
+	return { 'image-id': id }
 
 
 def list_text_images(area_name, version = 'new'):

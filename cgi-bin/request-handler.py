@@ -28,9 +28,7 @@ class Handler:
 		filename, image_file = image
 		image_blob = image_file.read()
 		
-		image_id = db.add_gallery_image(area_name, os.path.splitext(filename)[0], image_blob, None, None, title, comment)
-		
-		return { 'image-id': image_id }
+		return db.add_gallery_image(area_name, os.path.splitext(filename)[0], image_blob, None, None, title, comment)
 	
 	@db.in_transaction
 	def update_gallery_image(self, area_name, image_id, title, comment):
@@ -54,9 +52,7 @@ class Handler:
 		filename, image_file = image
 		image_blob = image_file.read()
 		
-		image_id = db.add_text_image(area_name, filename, image_blob, None, None)
-		
-		return { 'image-id': image_id }
+		return db.add_text_image(area_name, filename, image_blob, None, None)
 	
 	@db.in_transaction
 	def list_text_images(self, area_name):
