@@ -7,12 +7,11 @@ function makeTests(testImage) {
 
 	return [
 		// Gallery area tests
-		{
-			'name': 'remove all gallery images',
+		{			
+			'name': 'upload gallery images',
 			'test': function (success, failure) {
 				rpc.list_gallery_images(testGalleryArea, function (vImages) {
 					async.map(vImages, function (vImage, success, failure) {
-						message('Deleting image: ' + vImage['image-id'])
 						rpc.delete_gallery_image(testGalleryArea, vImage['image-id'], success, failure);
 					}, function () {
 						rpc.list_gallery_images(testGalleryArea, function (v) {
@@ -27,7 +26,6 @@ function makeTests(testImage) {
 			'test': function (success, failure) {
 				async.map(['foo', 'bar', 'baz'], function (v, success, failure) {
 					rpc.upload_gallery_image(testGalleryArea, testImage, v + ' title', v + ' comment', function (v) {
-						message('Got image-id: ' + v['image-id'])
 						success(v['image-id']);
 					}, failure);
 				}, function (res) {
@@ -39,20 +37,14 @@ function makeTests(testImage) {
 		{
 			'name': 'list gallery images',
 			'test': function (success, failure) {
-				rpc.list_gallery_images(testGalleryArea, function (v) {
-					message('Got image list: ' + $.toJSON(v))
-					success();
-				}, failure);
+				rpc.list_gallery_images(testGalleryArea, success, failure);
 			}
 		},
 		{
 			'name': 'request gallery images',
 			'test': function (success, failure) {
 				async.map(imageIds, function (v, success, failure) {
-					rpc.get_gallery_image(testGalleryArea, v, function (vData) {
-						message('Got image: ' + v);
-						success();
-					}, failure);
+					rpc.get_gallery_image(testGalleryArea, v, success, failure);
 				}, success, failure);
 			}
 		},
@@ -63,14 +55,9 @@ function makeTests(testImage) {
 				var newComment = 'new comment';
 				
 				async.map(imageIds, function (v, success, failure) {
-					rpc.update_gallery_image(testGalleryArea, v, newTitle, newComment, function (vData) {
-						message('Updated image: ' + v);
-						success();
-					}, failure);
+					rpc.update_gallery_image(testGalleryArea, v, newTitle, newComment, success, failure);
 				}, function () {
 					rpc.list_gallery_images(testGalleryArea, function (v) {
-						message('Got image list: ' + $.toJSON(v));
-						
 						var res = v.every(function (v, k) {
 							return v['title'] == newTitle && v['comment'] == newComment;
 						});
@@ -88,8 +75,6 @@ function makeTests(testImage) {
 								
 				rpc.set_gallery_order(testGalleryArea, imageIds, function () {
 					rpc.list_gallery_images(testGalleryArea, function (vList) {
-						message('Got image list: ' + $.toJSON(vList));
-						
 						var res = vList.every(function (v, k) {
 							return v['image-id'] == imageIds[k];
 						});
@@ -105,7 +90,6 @@ function makeTests(testImage) {
 			'test': function (success, failure) {
 				rpc.list_text_images(testTextArea, function (vImages) {
 					async.map(vImages, function (vImage, success, failure) {
-						message('Deleting image: ' + vImage['image-id'])
 						rpc.delete_text_image(testTextArea, vImage['image-id'], success, failure);
 					}, function () {
 						rpc.list_text_images(testTextArea, function (v) {
@@ -119,12 +103,11 @@ function makeTests(testImage) {
 			'name': 'upload text area images',
 			'test': function (success, failure) {
 				async.map(['foo', 'bar', 'baz'], function (v, success, failure) {
-					rpc.upload_text_image(testTextArea, testImage, function (v) {
-						message('Got image-id: ' + v['image-id'])
-						success(v['image-id']);
-					}, failure);
+					rpc.upload_text_image(testTextArea, testImage, success, failure);
 				}, function (res) {
-					imageIds = res;
+					imageIds = res.map(function (v) {
+						return v['image-id'];
+					});
 					success();
 				}, failure);
 			}
@@ -132,20 +115,14 @@ function makeTests(testImage) {
 		{
 			'name': 'list text area images',
 			'test': function (success, failure) {
-				rpc.list_text_images(testTextArea, function (v) {
-					message('Got image list: ' + $.toJSON(v))
-					success();
-				}, failure);
+				rpc.list_text_images(testTextArea, success, failure);
 			}
 		},
 		{
 			'name': 'request text area images',
 			'test': function (success, failure) {
 				async.map(imageIds, function (v, success, failure) {
-					rpc.get_text_image(testTextArea, v, function (vData) {
-						message('Got image: ' + v);
-						success();
-					}, failure);
+					rpc.get_text_image(testTextArea, v, success, failure);
 				}, success, failure);
 			}
 		},
@@ -153,10 +130,7 @@ function makeTests(testImage) {
 		{
 			'name': 'get text area content',
 			'test': function (success, failure) {
-				rpc.get_text_content(testTextArea, function (v) {
-					message('Got content: ' + v.content);
-					success();
-				}, failure);
+				rpc.get_text_content(testTextArea, success, failure);
 			}
 		},
 		{
@@ -216,6 +190,25 @@ function message(text, type) {
 	$('body').scrollTop($('body').height());
 }
 
+function rpcMessage(data) {
+	var args = [];
+	
+	lambda.map(data, function (k, v) {
+		if (k != 'action')
+			args.push(k + ' = ' + $.toJSON(v));
+	});
+	
+	message(data['action'] + '(' + args.join(', ') + ')');
+}
+
+// redefining jsonrpc to output a message for each request
+var jsonrpc = (function (jsonrpc) {
+	return function (url, data, success, failure) {
+		rpcMessage(data);
+		jsonrpc(url, data, success, failure);
+	}
+}) (jsonrpc)
+
 var handlerURL = '../cgi-bin/request-handler.py'
 
 var rpc = {
@@ -262,6 +255,7 @@ var rpc = {
 			'image-id': image_id
 		};
 		
+		rpcMessage(request);
 		image.src = handlerURL + '?' + $.toJSON(request);
 	},
 	'delete_gallery_image': function (area_name, image_id, success, failure) {
@@ -296,6 +290,7 @@ var rpc = {
 			'image-id': image_id
 		};
 		
+		rpcMessage(request);
 		image.src = handlerURL + '?' + $.toJSON(request);
 	},
 	'delete_text_image': function (area_name, image_id, success, failure) {
