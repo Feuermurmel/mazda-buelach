@@ -26,6 +26,11 @@ function makeTests(testImage) {
 					rpc.update_text_content(areaName, content);
 				};
 			},
+			'revert': function (version) {
+				return function (success, failure) {
+					rpc.revert_text(areaName, success, failure);
+				};
+			},
 			'getImage': function (imageId, version) {
 				return function (success, failure) {
 					rpc.get_text_image(areaName, imageId, version, success, failure);
@@ -50,9 +55,24 @@ function makeTests(testImage) {
 					rpc.upload_gallery_image(areaName, testImage, title, comment, success, failure);
 				};
 			},
+			'deleteImage': function (imageId) {
+				return function (success, failure) {
+					rpc.delete_gallery_image(areaName, imageId, success, failure);
+				};
+			},
 			'updateImage': function (imageId, title, comment) {
 				return function (success, failure) {
 					rpc.update_gallery_image(areaName, imageId, title, comment, success, failure);
+				};
+			},
+			'setOrder': function (imageIds) {
+				return function (success, failure) {
+					rpc.set_gallery_order(areaName, imageIds, success, failure);
+				};
+			},
+			'revert': function (version) {
+				return function (success, failure) {
+					rpc.revert_gallery(areaName, success, failure);
 				};
 			},
 			'listImages': function (version) {
@@ -128,7 +148,7 @@ function makeTests(testImage) {
 			])
 		},
 		{	
-			'name': 'list nonexistant gallery',
+			'name': 'list non-existing gallery',
 			'test': chain([
 				negate(galleryArea('doesnotexists', 'new').listImages())
 			])
@@ -147,11 +167,70 @@ function makeTests(testImage) {
 			])
 		},
 		{			
-			'name': 'update nonexistant image',
+			'name': 'update non-existing image',
 			'test': chain([
 				negate(testGalleryArea.updateImage('doesnotexist', '', ''))
 			])
 		},
+		{			
+			'name': 'set gallery order',
+			'test': chain([
+				function (success, failure) {
+					testGalleryArea.setOrder(galleryImageIds.slice().reverse())(success, failure);
+				},
+				tested(function (res) {
+					assertEqual(res[0]['image-id'], galleryImageIds[3]);
+					// we assume the rest's correct ...
+					assertEqual(res[3]['image-id'], galleryImageIds[0]);
+				}, testGalleryArea.listImages('new'))
+			])
+		},
+		{			
+			'name': 'invalid set gallery order requests',
+			'test': chain([
+				function (success, failure) {
+					negate(testGalleryArea.setOrder(galleryImageIds.slice(0, -1)))(success, failure);
+				},
+				function (success, failure) {
+					negate(testGalleryArea.setOrder(galleryImageIds.slice().concat(['invalid'])))(success, failure);
+				},
+				function (success, failure) {
+					negate(testGalleryArea.setOrder(galleryImageIds.map(function () {
+						return galleryImageIds[0];
+					})))(success, failure);
+				},
+				function (success, failure) {
+					negate(testGalleryArea.setOrder([]))(success, failure);
+				}
+			])
+		},
+		{			
+			'name': 'delete gallery image',
+			'test': chain([
+				function (success, failure) {
+					testGalleryArea.deleteImage(galleryImageIds[0])(success, failure);
+				},
+				function (success, failure) {
+					testGalleryArea.deleteImage(galleryImageIds[1])(success, failure);
+				},
+				function (success, failure) {
+					testGalleryArea.deleteImage(galleryImageIds[2])(success, failure);
+				},
+				tested(function (res) {
+					assertEqual(res.length, 1);
+					assertEqual(res[0]['image-id'], galleryImageIds[3]);
+				}, testGalleryArea.listImages('new'))
+			])
+		},
+		{			
+			'name': 'revert gallery',
+			'test': chain([
+				testGalleryArea.revert(),
+				tested(function (res) {
+					assertEqual(res.length, 3);
+				}, testGalleryArea.listImages('new'))
+			])
+		}
 		
 		
 		
@@ -279,14 +358,14 @@ function runTests(tests) {
 			success();
 		}, function (msg) {
 			message('Test failed: ' + msg, 'failure');
-			failure();
+			failure(v.name);
 		});
 	}, function (res) {
 		message('Test Summary:', 'title');
 		message('All tests passed', 'success');
 	}, function (msg) {
 		message('Test Summary:', 'title');
-		message('Some tests failed', 'failure');
+		message('Test Failed: ' + msg, 'failure');
 	});
 }
 
