@@ -1,4 +1,4 @@
-import os
+import os, itertools
 from os import path
 
 
@@ -51,6 +51,12 @@ class memorized(object):
 #	new_decorator.__dict__.update(decorator.__dict__)
 #	
 #	return new_decorator
+
+
+# returns a generator of unique name based on a base name
+def id_generator(base):
+	for i in itertools.count(1):
+		yield base if i < 2 else '%s_%s' % (base, i)
 
 
 # creates a file without overwriting an already existing one
