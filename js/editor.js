@@ -10,6 +10,7 @@ $(function(){
 		}, function () {
 		$(this).parent().removeClass("hover");
 	});
+	
 });
 
 function callEditor(type){
@@ -59,10 +60,14 @@ function setUpEditor(type){
 				$('.title', divToFill).append(imageList[i]['title']);
 				$('.comment', divToFill).append(imageList[i]['comment']);
 				$('.gallery-content').append(divToFill);
+				
+				// Eventhandler für löschen und bearbeiten für jedes bild hier einfügen
+				// Ein alert ausgeben
 			}
 		}, function() { alert("fehler");}
 		);
 	}
+	// ------------------------------------------------------
 	
 	// Funktionen für den Texteditor
 	function uploadTextImage() {
@@ -95,6 +100,7 @@ function setUpEditor(type){
 		}, function() { alert("fehler");}
 		);
 	}
+	// ---------------------------------------
 	
 	function closeEditor(){
 		$('.editor_popup').empty();
