@@ -49,6 +49,15 @@ textarea {
 .image-with-all {
 	display: inline-block;
 }
+.image-with-all:hover {
+	border:solid red 1px;
+}
+.image-with-all:hover > .gallery-image-icons {
+	visibility: visible;
+}
+.image-with-all > .gallery-image-icons {
+	visibility: hidden;
+}
 .image-with-all > .image {
 	
 }
