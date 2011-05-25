@@ -18,15 +18,18 @@ def get_connection(allow_empty = False):
 		if not allow_empty:
 			raise Exception('The database has not yet been created. Please use crete-db.py to do so.')
 		
+		dir = os.path.dirname(config.paths.db)
+		
 		# TODO: is this a good idea?
 		# Create an empty, world writable directory for the database.
-		os.makedirs(os.path.dirname(config.paths.db), exist_ok = True)
+		if not os.path.exists(dir):
+			os.makedirs(dir)
 		
 		# Create an empty, world-read-and-writable file
 		with open(config.paths.db, 'wb'): pass
 		
+		os.chmod(dir, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IWOTH | stat.S_IXOTH)
 		os.chmod(config.paths.db, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH | stat.S_IWOTH)
-		os.chmod(os.path.dirname(config.paths.db), stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IWOTH | stat.S_IXOTH)
 	
 	connection = sqlite3.connect(config.paths.db)
 	connection.cursor().execute('PRAGMA foreign_keys=ON') # make sure that foreign key constrainst are enforced by the database
