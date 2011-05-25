@@ -1,6 +1,6 @@
 class paths:
 	# path to the db file
-	db = '../db.sqlite'
+	db = '../db/site.sqlite'
 	
 	# temporary directory for generating the site
 	work = '../work/'
