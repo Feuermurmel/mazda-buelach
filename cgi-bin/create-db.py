@@ -1,9 +1,13 @@
 #! /usr/bin/env python3.2
 
-import db
+import sys, os, db, config
+
 
 if db.exists():
-	raise Exception('The database file already exists, please remove it and try again.')
+	if '-f' in sys.argv:
+		os.remove(config.paths.db)
+	else:
+		raise Exception('The database file already exists, please remove it and try again.')
 
 with db.get_connection(True) as connection:
 	cursor = connection.cursor()

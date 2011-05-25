@@ -4,6 +4,5 @@ set -e -o pipefail
 
 cd "$(dirname "$BASH_SOURCE")/cgi-bin"
 
-rm -f '../db.sqlite'
-./create-db.py
+./create-db.py -f
 ./create-test-data.py
