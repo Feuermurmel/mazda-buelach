@@ -109,7 +109,7 @@ function setUpEditor(type){
 	// -----------------------------------------------------------------
 	// Variabeln
 	var areaName = $(".editable").attr("areaname");
-	var handlerURL = '../cgi-bin/request-handler.py'
+	var handlerURL = 'cgi-bin/request-handler.py'
 	
 	
 	// -----------------------------------------------------------------
