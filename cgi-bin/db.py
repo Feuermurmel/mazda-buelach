@@ -43,48 +43,13 @@ def exists():
 	return os.path.exists(config.paths.db)
 
 
-def create_textarea(area_name):
-	if not galleryarea_exists(area_name):
-		cursor = get_connection().cursor()
-		
-		cursor.execute('insert into text_area(name) values (?)', [area_name])
-
-
-def get_textarea_content(area_name):
-	if not textarea_exists(area_name):
-		raise IntegrityError('No such text area: ' + area_name)
-	
+def add_uploaded_image(blob, width, height):
 	cursor = get_connection().cursor()
 	
-	cursor.execute('select content from text_area where area_name = ? and area_version = ?', [area_name, version])
+	upload_date = time.mktime(datetime.datetime.now().timetuple())
+	cursor.execute('insert into uploaded_image(blob, width, height, upload_date) values (?, ?, ?, ?)', (blob, width, height, upload_date))
 	
-	return cursor.fetchone()[0]
-
-
-def create_galleryarea(area_name):
-	if not galleryarea_exists(area_name):
-		cursor = get_connection().cursor()
-		
-		cursor.execute('insert into gallery_area(name) values (?)', [area_name])
-
-
-def galleryarea_exists(area_name):
-	cursor = get_connection().cursor()
-	
-	cursor.execute('select count(*) from gallery_area where name = ?', [area_name])
-	
-	return cursor.fetchone()[0] > 0;
-
-
-def galleryimage_exists(area_name, image_id):
-	if not galleryarea_exists(area_name):
-		raise IntegrityError('No such gallery: ' + area_name)
-	
-	cursor = get_connection().cursor()
-	
-	cursor.execute('select count(*) from gallery_image where gallery_area_name = ? and version = ? and id = ?', [area_name, 'new', image_id])
-	
-	return cursor.fetchone()[0] > 0;
+	return cursor.lastrowid
 
 
 def textarea_exists(area_name):
@@ -92,7 +57,7 @@ def textarea_exists(area_name):
 	
 	cursor.execute('select count(*) from text_area where name = ?', [area_name])
 	
-	return cursor.fetchone()[0] > 0;
+	return cursor.fetchone()[0] > 0
 
 
 def textimage_exists(area_name, image_id):
@@ -103,16 +68,144 @@ def textimage_exists(area_name, image_id):
 	
 	cursor.execute('select count(*) from text_image where text_area_name = ? and version = ? and id = ?', [area_name, 'new', image_id])
 	
-	return cursor.fetchone()[0] > 0;
+	return cursor.fetchone()[0] > 0
 
 
-def add_uploaded_image(blob, width, height):
+def create_textarea(area_name):
+	if not textarea_exists(area_name):
+		cursor = get_connection().cursor()
+		
+		cursor.execute('insert into text_area(name) values (?)', [area_name])
+
+
+def add_text_image(area_name, base_id, blob, width, height):
+	if not textarea_exists(area_name):
+		raise IntegrityError('No such text area: ' + area_name)
+	
+	cursor = get_connection().cursor()
+	counter = 0
+	upload_date = time.mktime(datetime.datetime.now().timetuple())
+	
+	for id in util.id_generator(base_id):
+		cursor.execute('select count(*) from text_image where id = ? and version = ? and text_area_name = ?', [id, 'new', area_name])
+		
+		if cursor.fetchone()[0] == 0: break
+	
+	uploaded_image_id = add_uploaded_image(blob, width, height)
+	cursor.execute('insert into text_image(id, version, text_area_name, uploaded_image_id) values (?, ?, ?, ?)', (id, 'new', area_name, uploaded_image_id))
+	
+	return { 'image-id': id }
+
+
+def list_text_images(area_name, version):
+	if not textarea_exists(area_name):
+		raise IntegrityError('No such text area: ' + area_name)
+	
 	cursor = get_connection().cursor()
 	
-	upload_date = time.mktime(datetime.datetime.now().timetuple())
-	cursor.execute('insert into uploaded_image(blob, width, height, upload_date) values (?, ?, ?, ?)', (blob, width, height, upload_date))
+	cursor.execute('select text_image.id, width, height, upload_date from text_image, uploaded_image where text_area_name = ? and version = ? and text_image.uploaded_image_id = uploaded_image.id', [area_name, version])
 	
-	return cursor.lastrowid
+	return [{ 'image-id': image_id, 'width': width, 'height': height, 'upload-date': upload_date } for image_id, width, height, upload_date in cursor.fetchall()]
+
+
+def get_text_image(area_name, image_id):
+	if not textimage_exists(area_name, image_id):
+		raise jsonrpc.CGIRequestError('No such image in text area: %s, %s' % (area_name, image_id))
+	
+	cursor = get_connection().cursor()
+	
+	cursor.execute('select blob from text_image, uploaded_image where text_area_name = ? and version = ? and text_image.id = ? and uploaded_image_id = uploaded_image.id', [area_name, 'new', image_id])
+	
+	return cursor.fetchone()[0]
+
+
+def delete_text_image(area_name, image_id):
+	if not textimage_exists(area_name, image_id):
+		raise jsonrpc.CGIRequestError('No such image in text area: %s, %s' % (area_name, image_id))
+	
+	cursor = get_connection().cursor()
+	
+	cursor.execute('delete from text_image where text_area_name = ? and version = ? and id = ?', [area_name, 'new', image_id])
+
+
+def update_text_content(area_name, content):
+	if not textarea_exists(area_name):
+		raise IntegrityError('No such text area: ' + area_name)
+	
+	cursor = get_connection().cursor()
+	
+	cursor.execute('delete from text_area_content where text_area_name = ? and version = ?', [area_name, 'new']) # deletes current content, if there is one
+	cursor.execute('insert into text_area_content(text_area_name, version, content) values (?, ?, ?)', [area_name, 'new', content])
+
+
+def get_text_content(area_name):
+	if not textarea_exists(area_name):
+		raise IntegrityError('No such text area: ' + area_name)
+	
+	cursor = get_connection().cursor()
+	
+	cursor.execute('select count(*) from text_area_content where text_area_name = ? and version = ?', [area_name, 'new'])
+	if (cursor.fetchone()[0] == 0):
+		return { 'content': '' }
+	
+	cursor.execute('select content from text_area_content where text_area_name = ? and version = ?', [area_name, 'new'])
+	
+	return { 'content': cursor.fetchone()[0] }
+
+
+def sync_text_area(area_name, version_to, version_from):
+	cursor = get_connection().cursor()
+	
+	cursor.execute('delete from text_image where text_area_name = ? and version = ?', [area_name, version_to])
+	cursor.execute('delete from text_area_content where text_area_name = ? and version = ?', [area_name, version_to])
+	
+	cursor.execute('insert into text_image(id, text_area_name, version, uploaded_image_id) select id, ?, ?, uploaded_image_id from text_image where text_area_name = ? and version = ?', [area_name, version_to, area_name, version_from])
+	cursor.execute('insert into text_area_content(text_area_name, version, content) select ?, ?, content from text_area_content where text_area_name = ? and version = ?', [area_name, version_to, area_name, version_from])
+
+
+def galleryarea_exists(area_name):
+	cursor = get_connection().cursor()
+	
+	cursor.execute('select count(*) from gallery_area where name = ?', [area_name])
+	
+	return cursor.fetchone()[0] > 0
+
+
+def galleryimage_exists(area_name, image_id):
+	if not galleryarea_exists(area_name):
+		raise IntegrityError('No such gallery: ' + area_name)
+	
+	cursor = get_connection().cursor()
+	
+	cursor.execute('select count(*) from gallery_image where gallery_area_name = ? and version = ? and id = ?', [area_name, 'new', image_id])
+	
+	return cursor.fetchone()[0] > 0
+
+
+def create_galleryarea(area_name):
+	if not galleryarea_exists(area_name):
+		cursor = get_connection().cursor()
+		
+		cursor.execute('insert into gallery_area(name) values (?)', [area_name])
+
+
+def gallery_area_exists(area_name):
+	cursor = get_connection().cursor()
+	
+	cursor.execute('select count(*) from gallery_area where name = ?', [area_name])
+	
+	return cursor.fetchone()[0] > 0
+
+
+def galleryimage_exists(area_name, image_id):
+	if not galleryarea_exists(area_name):
+		raise IntegrityError('No such gallery: ' + area_name)
+	
+	cursor = get_connection().cursor()
+	
+	cursor.execute('select count(*) from gallery_image where gallery_area_name = ? and version = ? and id = ?', [area_name, 'new', image_id])
+	
+	return cursor.fetchone()[0] > 0
 
 
 def add_gallery_image(area_name, base_id, blob, width, height, title, comment):
@@ -131,7 +224,7 @@ def add_gallery_image(area_name, base_id, blob, width, height, title, comment):
 	res = cursor.fetchone()[0]
 	next_pos = 0 if res is None else res + 1
 	
-	uploaded_image_id = add_uploaded_image(blob, width, height);
+	uploaded_image_id = add_uploaded_image(blob, width, height)
 	cursor.execute('insert into gallery_image(id, position, title, comment, version, gallery_area_name, uploaded_image_id) values (?, ?, ?, ?, ?, ?, ?)', (id, next_pos, title, comment, 'new', area_name, uploaded_image_id))
 	
 	return { 'image-id': id }
@@ -194,89 +287,11 @@ def delete_gallery_image(area_name, image_id):
 	cursor.execute('delete from gallery_image where gallery_area_name = ? and version = ? and id = ?', [area_name, 'new', image_id])
 
 
-def update_textarea(name, content):
-	if not textarea_exists(area_name):
-		raise IntegrityError('No such text area: ' + area_name)
-	
-	cursor = get_connection().cursor()
-	cursor.execute('update text_area set content = ? where area_name = ? and area_version = ?', [content, name, 'new'])
-	
-	return cursor.fetchone()[0]
-
-
-def add_text_image(area_name, base_id, blob, width, height):
-	if not textarea_exists(area_name):
-		raise IntegrityError('No such text area: ' + area_name)
-	
-	cursor = get_connection().cursor()
-	counter = 0
-	upload_date = time.mktime(datetime.datetime.now().timetuple())
-	
-	for id in util.id_generator(base_id):
-		cursor.execute('select count(*) from text_image where id = ? and version = ? and text_area_name = ?', [id, 'new', area_name])
-		
-		if cursor.fetchone()[0] == 0: break
-	
-	uploaded_image_id = add_uploaded_image(blob, width, height);
-	cursor.execute('insert into text_image(id, version, text_area_name, uploaded_image_id) values (?, ?, ?, ?)', (id, 'new', area_name, uploaded_image_id))
-	
-	return { 'image-id': id }
-
-
-def list_text_images(area_name, version):
-	if not textarea_exists(area_name):
-		raise IntegrityError('No such text area: ' + area_name)
-	
+def sync_gallery_area(area_name, version_to, version_from):
 	cursor = get_connection().cursor()
 	
-	cursor.execute('select text_image.id, width, height, upload_date from text_image, uploaded_image where text_area_name = ? and version = ? and text_image.uploaded_image_id = uploaded_image.id', [area_name, version])
-	
-	return [{ 'image-id': image_id, 'width': width, 'height': height, 'upload-date': upload_date } for image_id, width, height, upload_date in cursor.fetchall()]
-
-
-def get_text_image(area_name, image_id):
-	if not textimage_exists(area_name, image_id):
-		raise jsonrpc.CGIRequestError('No such image in text area: %s, %s' % (area_name, image_id))
-	
-	cursor = get_connection().cursor()
-	
-	cursor.execute('select blob from text_image, uploaded_image where text_area_name = ? and version = ? and text_image.id = ? and uploaded_image_id = uploaded_image.id', [area_name, 'new', image_id])
-	
-	return cursor.fetchone()[0]
-
-
-def delete_text_image(area_name, image_id):
-	if not textimage_exists(area_name, image_id):
-		raise jsonrpc.CGIRequestError('No such image in text area: %s, %s' % (area_name, image_id))
-	
-	cursor = get_connection().cursor()
-	
-	cursor.execute('delete from text_image where text_area_name = ? and version = ? and id = ?', [area_name, 'new', image_id])
-
-
-def get_text_content(area_name):
-	if not textarea_exists(area_name):
-		raise IntegrityError('No such text area: ' + area_name)
-	
-	cursor = get_connection().cursor()
-	
-	cursor.execute('select count(*) from text_area_content where text_area_name = ? and version = ?', [area_name, 'new'])
-	if (cursor.fetchone()[0] == 0):
-		return { 'content': '' }
-	
-	cursor.execute('select content from text_area_content where text_area_name = ? and version = ?', [area_name, 'new'])
-	
-	return { 'content': cursor.fetchone()[0] }
-
-
-def update_text_content(area_name, content):
-	if not textarea_exists(area_name):
-		raise IntegrityError('No such text area: ' + area_name)
-	
-	cursor = get_connection().cursor()
-	
-	cursor.execute('delete from text_area_content where text_area_name = ? and version = ?', [area_name, 'new']) # deletes current content, if there is one
-	cursor.execute('insert into text_area_content(text_area_name, version, content) values (?, ?, ?)', [area_name, 'new', content])
+	cursor.execute('delete from gallery_image where gallery_area_name = ? and version = ?', [area_name, version_to])
+	cursor.execute('insert into gallery_image(id, position, title, comment, gallery_area_name, version, uploaded_image_id) select id, position, title, comment, ?, ?, uploaded_image_id from gallery_image where gallery_area_name = ? and version = ?', [area_name, version_to, area_name, version_from])
 
 
 def sync_all(version_to, version_from):
@@ -290,8 +305,8 @@ def sync_all(version_to, version_from):
 	cursor.execute('delete from gallery_image where version = ?', [version_to])
 	
 	cursor.execute('insert into text_image(id, version, text_area_name, uploaded_image_id) select id, ?, text_area_name, uploaded_image_id from text_image where version = ?', [version_to, version_from])
-	cursor.execute('insert into gallery_image(id, position, title, comment, version, gallery_area_name, uploaded_image_id) select id, position, title, comment, ?, gallery_area_name, uploaded_image_id from gallery_image where version = ?', [version_to, version_from])
-	cursor.execute('insert into text_area_content(version, text_area_name, content) select ?, text_area_name, content from text_area_content where version = ?', [version_to, version_from])
+	cursor.execute('insert into text_area_content(text_area_name, version, content) select text_area_name, ?, content from text_area_content where version = ?', [version_to, version_from])
+	cursor.execute('insert into gallery_image(id, position, title, comment, gallery_area_name, version, uploaded_image_id) select id, position, title, comment, gallery_area_name, ?, uploaded_image_id from gallery_image where version = ?', [version_to, version_from])
 
 
 def cleanup_orphan_images():

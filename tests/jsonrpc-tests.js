@@ -16,6 +16,11 @@ function makeTests(testImage) {
 					}, failure);
 				};
 			},
+			'deleteImage': function (imageId) {
+				return function (success, failure) {
+					rpc.delete_text_image(areaName, imageId, success, failure);
+				};
+			},
 			'uploadImage': function () {
 				return function (success, failure) {
 					rpc.upload_text_image(areaName, testImage, success, failure);
@@ -23,7 +28,7 @@ function makeTests(testImage) {
 			},
 			'updateContent': function (content) {
 				return function (success, failure) {
-					rpc.update_text_content(areaName, content);
+					rpc.update_text_content(areaName, content, success, failure);
 				};
 			},
 			'revert': function (version) {
@@ -31,9 +36,19 @@ function makeTests(testImage) {
 					rpc.revert_text(areaName, success, failure);
 				};
 			},
+			'listImages': function (version) {
+				return function (success, failure) {
+					rpc.list_text_images(areaName, version, success, failure);
+				};
+			},
 			'getImage': function (imageId, version) {
 				return function (success, failure) {
 					rpc.get_text_image(areaName, imageId, version, success, failure);
+				};
+			},
+			'getContent': function (version) {
+				return function (success, failure) {
+					rpc.get_text_content(areaName, version, success, failure);
 				};
 			}
 		};
@@ -104,11 +119,12 @@ function makeTests(testImage) {
 	}
 	
 	return [
-		// Gallery area tests
+		// Prelude
 		{			
 			'name': 'get the database into a known state',
 			'test': chain([
 				testTextArea.deleteAllImages(),
+				testTextArea.updateContent('text content'),
 				grabResult(grabTextImageId, testTextArea.uploadImage()),
 				grabResult(grabTextImageId, testTextArea.uploadImage()),
 				grabResult(grabTextImageId, testTextArea.uploadImage()),
@@ -119,12 +135,90 @@ function makeTests(testImage) {
 				activateChanges()
 			])
 		},
+		
+		// Text area tests
+		{			
+			'name': 'uploading a text image',
+			'test': chain([
+				grabResult(grabTextImageId, testTextArea.uploadImage('image 4', 'image 4 comment')),
+				function (success, failure) {
+					// the image id must be computed at the time we execute this command
+					testTextArea.getImage(textImageIds.slice(-1)[0], 'new')(success, failure);
+				}
+			])
+		},
+		{			
+			'name': 'uploading a text image into non-existant textarea',
+			'test': chain([
+				negate(textArea('doesnotexists', 'new').uploadImage('', ''))
+			])
+		},
+		{			
+			'name': 'list textarea images',
+			'test': chain([
+				tested(function (res) {
+					assertEqual(res[0]['image-id'], textImageIds[0]);
+					// we assume the rest's correct ...
+					assertEqual(res[3]['image-id'], textImageIds[3]);
+				}, testTextArea.listImages('new'))
+			])
+		},
+		{	
+			'name': 'list non-existing textarea',
+			'test': chain([
+				negate(textArea('doesnotexists', 'new').listImages())
+			])
+		},
+		{
+			'name': 'delete text image',
+			'test': chain([
+				function (success, failure) {
+					testTextArea.deleteImage(textImageIds[0])(success, failure);
+				},
+				function (success, failure) {
+					testTextArea.deleteImage(textImageIds[1])(success, failure);
+				},
+				function (success, failure) {
+					testTextArea.deleteImage(textImageIds[2])(success, failure);
+				},
+				tested(function (res) {
+					assertEqual(res.length, 1);
+					assertEqual(res[0]['image-id'], textImageIds[3]);
+				}, testTextArea.listImages('new'))
+			])
+		},
+		{
+			'name': 'update texarea content',
+			'test': chain([
+				function (success, failure) {
+					testTextArea.updateContent('new text content')(success, failure);
+				},
+				tested(function (res) {
+					assertEqual(res.content, 'new text content');
+				}, testTextArea.getContent('new'))
+			])
+		},
+		{			
+			'name': 'revert textarea',
+			'test': chain([
+				testTextArea.revert(),
+				tested(function (res) {
+					assertEqual(res.length, 3);
+				}, testTextArea.listImages('new')),
+				tested(function (res) {
+					console.log(res);
+					assertEqual(res.content, 'text content');
+				}, testTextArea.getContent('new'))
+			])
+		},
+		
+		// Gallery area tests
 		{			
 			'name': 'uploading a gallery image',
 			'test': chain([
 				grabResult(grabGalleryImageId, testGalleryArea.uploadImage('image 4', 'image 4 comment')),
 				function (success, failure) {
-					// the image id must be computet at the time we execute this command
+					// the image id must be computed at the time we execute this command
 					testGalleryArea.getImage(galleryImageIds.slice(-1)[0], 'new')(success, failure);
 				}
 			])
@@ -157,7 +251,7 @@ function makeTests(testImage) {
 			'name': 'update gallery image',
 			'test': chain([
 				function (success, failure) {
-					// the image id must be computet at the time we execute this command
+					// the image id must be computed at the time we execute this command
 					testGalleryArea.updateImage(galleryImageIds[0], 'new title', 'new comment')(success, failure);
 				},
 				tested(function (res) {
@@ -231,119 +325,6 @@ function makeTests(testImage) {
 				}, testGalleryArea.listImages('new'))
 			])
 		}
-		
-		
-		
-	/*
-		{
-			'name': 'list gallery images',
-			'test': function (success, failure) {
-				rpc.list_gallery_images(testGalleryArea, success, failure);
-			}
-		},
-		{
-			'name': 'request gallery images',
-			'test': function (success, failure) {
-				async.map(imageIds, function (v, success, failure) {
-					rpc.get_gallery_image(testGalleryArea, v, success, failure);
-				}, success, failure);
-			}
-		},
-		{
-			'name': 'update gallery images',
-			'test': function (success, failure) {
-				var newTitle = 'new title';
-				var newComment = 'new comment';
-				
-				async.map(imageIds, function (v, success, failure) {
-					rpc.update_gallery_image(testGalleryArea, v, newTitle, newComment, success, failure);
-				}, function () {
-					rpc.list_gallery_images(testGalleryArea, function (v) {
-						var res = v.every(function (v, k) {
-							return v['title'] == newTitle && v['comment'] == newComment;
-						});
-						
-						check(res, 'new titles or comments do not match', success, failure);
-					}, failure);
-				}, failure);
-			}
-		},
-		{
-			'name': 'set gallery image order',
-			'test': function (success, failure) {
-				// reverse the images in the gallery and test their order
-				imageIds.reverse()
-								
-				rpc.set_gallery_order(testGalleryArea, imageIds, function () {
-					rpc.list_gallery_images(testGalleryArea, function (vList) {
-						var res = vList.every(function (v, k) {
-							return v['image-id'] == imageIds[k];
-						});
-						
-						check(res, 'new image ids do not match', success, failure);
-					}, failure);
-				}, failure);
-			}
-		},
-		// Text area tests
-		{
-			'name': 'remove all text area images',
-			'test': function (success, failure) {
-				rpc.list_text_images(testTextArea, function (vImages) {
-					async.map(vImages, function (vImage, success, failure) {
-						rpc.delete_text_image(testTextArea, vImage['image-id'], success, failure);
-					}, function () {
-						rpc.list_text_images(testTextArea, function (v) {
-							check(v.length == 0, 'image list not empty', success, failure);
-						}, failure);
-					}, failure);
-				}, failure);
-			}
-		},
-		{
-			'name': 'upload text area images',
-			'test': function (success, failure) {
-				async.map(['foo', 'bar', 'baz'], function (v, success, failure) {
-					rpc.upload_text_image(testTextArea, testImage, success, failure);
-				}, function (res) {
-					imageIds = res.map(function (v) {
-						return v['image-id'];
-					});
-					success();
-				}, failure);
-			}
-		},
-		{
-			'name': 'list text area images',
-			'test': function (success, failure) {
-				rpc.list_text_images(testTextArea, success, failure);
-			}
-		},
-		{
-			'name': 'request text area images',
-			'test': function (success, failure) {
-				async.map(imageIds, function (v, success, failure) {
-					rpc.get_text_image(testTextArea, v, success, failure);
-				}, success, failure);
-			}
-		},
-		// Text area content
-		{
-			'name': 'get text area content',
-			'test': function (success, failure) {
-				rpc.get_text_content(testTextArea, success, failure);
-			}
-		},
-		{
-			'name': 'set text area content',
-			'test': function (success, failure) {
-				rpc.update_text_content(testTextArea, testContent, function (vData) {
-					rpc.get_text_content(testTextArea, function (v) {
-						check(v.content == testContent, 'content does not match!', success, failure);
-					}, failure);
-				}, failure);
-			}
-		} */
 	]
 }
 
@@ -470,6 +451,63 @@ var jsonrpc = (function (jsonrpc) {
 var handlerURL = '../cgi-bin/request-handler.py'
 
 var rpc = {
+	'upload_text_image': function (area_name, image, success, failure) {
+		jsonrpc(handlerURL, {
+			'action': 'upload-text-image',
+			'area-name': area_name,
+			'image': image
+		}, success, failure);
+	},
+	'delete_text_image': function (area_name, image_id, success, failure) {
+		jsonrpc(handlerURL, {
+			'action': 'delete-text-image',
+			'area-name': area_name,
+			'image-id': image_id
+		}, success, failure);
+	},
+	'update_text_content': function (area_name, content, success, failure) {
+		jsonrpc(handlerURL, {
+			'action': 'update-text-content',
+			'area-name': area_name,
+			'content': content
+		}, success, failure);
+	},
+	'revert_text': function (area_name, success, failure) {
+		jsonrpc(handlerURL, {
+			'action': 'revert-text',
+			'area-name': area_name
+		}, success, failure);
+	},
+	'get_text_content': function (area_name, version, success, failure) {
+		jsonrpc(handlerURL, {
+			'action': 'get-text-content',
+			'area-name': area_name,
+			'version': version
+		}, success, failure);
+	},
+	'list_text_images': function (area_name, version, success, failure) {
+		jsonrpc(handlerURL, {
+			'action': 'list-text-images',
+			'area-name': area_name,
+			'version': version
+		}, success, failure);
+	},
+	'get_text_image': function (area_name, image_id, version, success, failure) {
+		var image = new Image();
+		
+		$(image).load(function () { success(image); });
+		$(image).error(function () { failure('bäääh!'); });
+		
+		request = {
+			'action': 'get-text-image',
+			'area-name': area_name,
+			'image-id': image_id,
+			'version': version
+		};
+		
+		rpcMessage(request);
+		image.src = handlerURL + '?' + $.toJSON(request);
+	},
 	'upload_gallery_image': function (area_name, image, title, comment, success, failure) {
 		jsonrpc(handlerURL, {
 			'action': 'upload-gallery-image',
@@ -523,63 +561,6 @@ var rpc = {
 		
 		request = {
 			'action': 'get-gallery-image',
-			'area-name': area_name,
-			'image-id': image_id,
-			'version': version
-		};
-		
-		rpcMessage(request);
-		image.src = handlerURL + '?' + $.toJSON(request);
-	},
-	'upload_text_image': function (area_name, image, success, failure) {
-		jsonrpc(handlerURL, {
-			'action': 'upload-text-image',
-			'area-name': area_name,
-			'image': image
-		}, success, failure);
-	},
-	'delete_text_image': function (area_name, image_id, success, failure) {
-		jsonrpc(handlerURL, {
-			'action': 'delete-text-image',
-			'area-name': area_name,
-			'image-id': image_id
-		}, success, failure);
-	},
-	'update_text_content': function (area_name, content, success, failure) {
-		jsonrpc(handlerURL, {
-			'action': 'update-text-content',
-			'area-name': area_name,
-			'content': content
-		}, success, failure);
-	},
-	'revert_text': function (area_name, success, failure) {
-		jsonrpc(handlerURL, {
-			'action': 'revert-text',
-			'area-name': area_name
-		}, success, failure);
-	},
-	'get_text_content': function (area_name, version, success, failure) {
-		jsonrpc(handlerURL, {
-			'action': 'get-text-content',
-			'area-name': area_name,
-			'version': version
-		}, success, failure);
-	},
-	'list_text_images': function (area_name, version, success, failure) {
-		jsonrpc(handlerURL, {
-			'action': 'list-text-images',
-			'area-name': area_name,
-			'version': version
-		}, success, failure);
-	},
-	'get_text_image': function (area_name, image_id, version, success, failure) {
-		var image = new Image();
-		
-		$(image).load(function () { success(image); });
-		$(image).error(function () { failure('bäääh!'); });
-		
-		request = {
-			'action': 'get-text-image',
 			'area-name': area_name,
 			'image-id': image_id,
 			'version': version

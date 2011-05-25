@@ -49,7 +49,7 @@ class Handler:
 	
 	@db.in_transaction
 	def revert_gallery(self, area_name):
-		db.sync_gallery(area_name, db.version_old, db.version_new)
+		db.sync_gallery_area(area_name, db.version_new, db.version_current)
 		db.cleanup_orphan_images()
 	
 	def list_gallery_images(self, area_name, version = db.version_new):
@@ -76,7 +76,7 @@ class Handler:
 	
 	@db.in_transaction
 	def revert_text(self, area_name):
-		db.sync_gallery(area_name, db.version_old, db.version_new)
+		db.sync_text_area(area_name, db.version_new, db.version_current)
 		db.cleanup_orphan_images()
 	
 	def get_text_content(self, area_name, version = db.version_new):
