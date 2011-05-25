@@ -71,10 +71,23 @@ function setUpEditor(type){
 	
 	// Funktionen für den Texteditor
 	function uploadTextImage() {
-		alert("Funktioniert");
+		var file = $(".text-editor [name=upload-text-picture]")[0].files[0];
+		jsonrpc(handlerURL, {
+			'action': 'upload-text-image',
+			'area-name': areaName,
+			'image': file
+		}, loadImageList, function() { alert("fehler");}
+		);
 	}
 	function deleteTextImage () {
-		
+		image_id = $(".editor [name=text-editor-img-list]")[0].value;
+		alert(image_id);
+		jsonrpc(handlerURL, {
+			'action': 'delete-text-image',
+			'area-name': areaName,
+			'image-id': image_id
+		}, loadImageList, function() { alert("fehler"); }
+		);
 	}
 	function insertImageInText() {
 		textarea = $(".editor [name=editor-textarea]")   
@@ -85,19 +98,40 @@ function setUpEditor(type){
 		textarea[0].value = str;  // String in der Textarea einsetzten
 		textarea[0].setSelectionRange(pos + imgString.length , pos + imgString.length);  // Cursor hinter dem Bild setzten
 	}
-	function loadImageList () {		
-		var imageListElem = $(".editor [name=text-editor-img-list]")[0];
-		req = {
-			'action': 'list-gallery-images',
+	function loadTextInTextbox () {
+		textarea = $(".editor [name=editor-textarea]") 
+		jsonrpc(handlerURL, {
+			'action': 'get-text-content',
 			'area-name': areaName
+		}, function (res) {
+			textarea[0].value = res.content;
+		}, function() {
+			textarea[0].value = "Text konnte nicht geladen werden !!";
 		}
-		jsonrpc(handlerURL, req, function(imageList) {
+		);
+	}
+	function saveText () {
+		textarea = $(".editor [name=editor-textarea]");
+		text = textarea[0].value;
+		jsonrpc(handlerURL, {
+			'action': 'update-text-content',
+			'area-name': areaName,
+			'content': text	
+		}, function() { alert("Text hochgeladen") }, function() { alert("Text hochladen fehlgeschlagen") }
+		);
+	}
+	function loadImageList () {
+		var imageListElem = $(".editor [name=text-editor-img-list]")[0];
+		jsonrpc(handlerURL, {
+			'action': 'list-text-images',
+			'area-name': areaName
+			}, function(imageList) {
 			imageListElem.length = null;
 			for(i = 0; i < imageList.length ; i++)
 			{
 				imageListElem.options[imageListElem.length] = new Option(imageList[i]['image-id'], imageList[i]['image-id'], false, false);
 			}
-		}, function() { alert("fehler");}
+		}, function () { alert("fehler");}
 		);
 	}
 	// ---------------------------------------
@@ -126,8 +160,9 @@ function setUpEditor(type){
 	else if(type === "text")
 	{
 		$(".gallery-editor").hide();
+		loadTextInTextbox();
 		loadImageList();
-		$('.gallery').append("Texteditor");
+		$(".editor [name=save-text]").click(saveText);
 		$(".editor [name=picture-insert]").click(insertImageInText);
 		$(".editor [name=upload-text-picture]").change(uploadTextImage);
 		$(".editor [name=picture-remove]").click(deleteTextImage);
