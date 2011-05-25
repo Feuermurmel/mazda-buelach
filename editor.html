@@ -1,18 +1,20 @@
+<!DOCTYPE html>
 <html>
 	<head>
-		<link href="css/screen.css" rel="stylesheet" media="screen" type="text/css" />
+		<link href="css/screen.css" rel="stylesheet" media="screen" type="text/css">
+		<meta charset="utf-8">
 		<title>
 		</title>
 	</head>
 	<body>
 		<div class="editor">
 			<div class="header">Seite bearbeiten
-				<img class="editor-schliessen-img" src="img/schliessen.jpg" title="Schliessen">
+				<img class="editor-schliessen-img" src="img/schliessen.jpg" alt="Schliessen" title="Schliessen">
 			</div>
 			<div class="text-editor">
 				<div class="buttons">
-					<input type="button" name="save" value="Speichern" />
-					<input type="button" name="preview" value="Vorschau" />
+					<input type="button" name="save-text" value="Speichern">
+					<input type="button" name="preview" value="Vorschau">
 				</div>
 				<div class="text-content">
 					<textarea name="editor-textarea" cols="50" rows="20"></textarea>
@@ -20,11 +22,11 @@
 				<div class="editor-img-list">
 					<div class="upload-image">
 						neues Bild hochladen:
-						<input type="file" name="upload-text-picture" value="Bild hochladen" />
+						<input type="file" name="upload-text-picture">
 					<!-- <input type="button" name="picture-upload" value="Bild hochladen" /> -->
 					</div>
-					<input type="button" name="picture-insert" value="Bild einfügen" />
-					<input type="button" name="picture-remove" value="Bild löschen" />
+					<input type="button" name="picture-insert" value="Bild einfügen">
+					<input type="button" name="picture-remove" value="Bild löschen">
 					<select name="text-editor-img-list" size="15">
 						<!-- Liste wird von Javascript gefüllt -->
 					</select>
@@ -32,20 +34,18 @@
 				
 			</div>
 			<div class="gallery-editor">
-				<form enctype="multipart/form-data"> 
-					<div class="buttons">
-						Bild hochladen: <br />
-						<input type="file" name="picture" value="Bild einfügen" />
-						Titel: <input type="text" id="title" name="title" value="Titel" />
-						Kommentar: <input type="text" name="comment" value="Kommentar" />
-						<input type="button" name="submit" value="Hochladen" />
-					</div>
-				</form>
+				<div class="buttons">
+					Bild hochladen: <br />
+					<input type="file" name="picture">
+					Titel: <input type="text" id="title" name="title" value="Titel">
+					Kommentar: <input type="text" name="comment" value="Kommentar">
+					<input type="button" name="submit" value="Hochladen">
+				</div>
 				<div class="gallery-content">
 					<div class="image-with-all">
 						<div class="gallery-image-icons">
-							<img name="gallery-image-edit" src="img/editicon.jpg">
-							<img name="gallery-image-delete" src="img/schliessen.jpg">
+							<img class="gallery-image-edit" src="img/editicon.jpg" alt="edit">
+							<img class="gallery-image-delete" src="img/schliessen.jpg" alt="delete">
 						</div>
 						<div class="image">
 						</div>
